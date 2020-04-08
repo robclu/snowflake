@@ -8,6 +8,11 @@
 
 #===== [packages] =============================================================#
 
+#==--- [fmt] ----------------------------------------------------------------==#
+find_package(fmt REQUIRED)
+if (NOT fmt_FOUND)
+  message(ERROR "Fmt not found!")
+endif()
 #==--- [vulkan] -------------------------------------------------------------==#
 find_package(Vulkan REQUIRED)
 if (NOT VULKAN_FOUND)
@@ -63,7 +68,7 @@ set(SOURCES glow.cpp)
 if (APPLE)
   list(
     APPEND SOURCES 
-    ${GLOW_SOURCE_DIR}/apple_cocoa_platform.mm
+    ${GLOW_SOURCE_DIR}/vk/apple_cocoa_platform.mm
   )
  endif(APPLE)
 
@@ -81,4 +86,5 @@ target_link_libraries(
   ${Vulkan_LIBRARIES}
   ${SDL2_LIBRARY}
   ${EXTRA_LIBRARIES}
+  fmt::fmt
 )
