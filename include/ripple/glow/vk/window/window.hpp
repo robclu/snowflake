@@ -13,10 +13,11 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_VK_WINDOW_WINDOW_BASE_HPP
-#define RIPPLE_GLOW_VK_WINDOW_WINDOW_BASE_HPP
+#ifndef RIPPLE_GLOW_VK_WINDOW_WINDOW_HPP
+#define RIPPLE_GLOW_VK_WINDOW_WINDOW_HPP
 
 #include "../platform/platform.hpp"
+#include <ripple/core/util/portability.hpp>
 
 namespace ripple::glow::vk {
 
@@ -46,16 +47,16 @@ class Window {
   //===--- [operator overloads] --------------------------------------------==//
 
   /// Deleted copy assignment operator.
-  Window& operator=(const Window&) = delete;
+  auto operator=(const Window&) -> Window& = delete;
   /// Deleted move assignment operator.
-  Window& operator=(Window&&)     = delete;
+  auto operator=(Window&&) -> Window&      = delete;
 
   // clang-format on
 
   //==--- [interface] ------------------------------------------------------==//
 
   /// Returns true of the window is alive.
-  auto is_alive() const -> bool;
+  ripple_no_discard auto is_alive() const -> bool;
 
   /// Polls the event loop of the window, returning an event.
   auto poll_input() -> void;
@@ -67,4 +68,4 @@ class Window {
 
 } // namespace ripple::glow::vk
 
-#endif // RIPPLE_GLOW_VK_WINDOW_WINDOW_BASE_HPP
+#endif // RIPPLE_GLOW_VK_WINDOW_WINDOW_HPP
