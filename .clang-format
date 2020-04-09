@@ -51,7 +51,8 @@ PenaltyBreakTemplateDeclaration: '10'
 PenaltyReturnTypeOnItsOwnLine: '0'
 PointerAlignment: Left
 ReflowComments: true
-SortUsingDeclarations: true
+SortIncludes: 'false'
+SortUsingDeclarations: 'false'
 SpaceAfterCStyleCast: 'false'
 SpaceAfterLogicalNot: 'false'
 SpaceAfterTemplateKeyword: true
