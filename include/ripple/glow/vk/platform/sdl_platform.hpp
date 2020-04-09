@@ -17,6 +17,7 @@
 #ifndef RIPPLE_GLOW_VK_PLATFORM_SDL_PLATFORM_HPP
 #define RIPPLE_GLOW_VK_PLATFORM_SDL_PLATFORM_HPP
 
+#include "platform_base.hpp"
 #include <SDL.h>
 #include <string>
 
@@ -24,46 +25,57 @@ namespace ripple::glow::vk {
 
 /// The SdlPlatform wraps SDL functionality which is common for all platforms
 /// which use SDL.
-struct SdlPlatform {
-  using window_ptr_t  = SDL_Window*; //!< Type of the window pointer.
-  window_ptr_t window = nullptr;     //!< Pointer to the window.
+class SdlPlatform : Platform<SdlPlatform> {
+  using window_ptr_t    = SDL_Window*;           //!< Window pointer type.
+  using base_platform_t = Platform<SdlPlatform>; //!< Base platform type.
+  window_ptr_t _window  = nullptr;               //!< Pointer to the window.
 
-  /// Initializes SDL.
-  SdlPlatform() {
-    assert(SDL_Init(SDL_INIT_EVENTS) == 0);
-  }
+ public:
+  //==--- [construction] ---------------------------------------------------==//
 
-  /// Initializes the SDL window with a \p title, a \p width, and a \p height.
-  /// \param title  The title for the window.
-  /// \param width  The width of the window.
-  /// \param height The height of the window.
-  auto init_window(const std::string& title, uint32_t width, uint32_t height)
-    -> void {
-    const int center_x = SDL_WINDOWPOS_CENTERED;
-    const int center_y = SDL_WINDOWPOS_CENTERED;
-    uint32_t  flags    = SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
+  /// Constructor to initialize the platform with a \p title, and a \p width and
+  /// \p height.
+  SdlPlatform(const std::string& title, uint32_t width, uint32_t height);
 
-    // If using a paltform with a resizable window:
-    if constexpr (GLOW_RESIZABLE_WINDOW) {
-      flags |= SDL_WINDOW_RESIZABLE;
-    }
+  // clang-format off
 
-    window = SDL_CreateWindow(
-      title.c_str(),
-      center_x,
-      center_y,
-      static_cast<int>(width),
-      static_cast<int>(height),
-      flags);
-  }
+  /// Copy constructor, deleted.
+  SdlPlatform(const SdlPlatform&)     = delete;
+  /// Move constructor, defaulted.
+  SdlPlatform(SdlPlatform&&) noexcept = default;
 
-  /// Deestroys SDL.
-  ~SdlPlatform() {
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-  }
+  /// Destroys SDL.
+  ~SdlPlatform();
+
+  //==--- [operator overloads] ---------------------------------------------==//
+
+  /// Copy assignment, deleted.
+  auto operator=(const SdlPlatform&) -> SdlPlatform&     = delete;
+  /// Move assignment, defaulted.
+  auto operator=(SdlPlatform&&) noexcept -> SdlPlatform& = default;
+
+  // clang-format on
+
+  //==--- [interface] ------------------------------------------------------==//
+
+  /// Initializes the platform with a \p title.
+  /// \param title The title to initialize the platform with.
+  auto initialize(const std::string& title) -> void;
+
+  /// Initializes the vulkan loader, returning true if the loading was
+  /// successul.
+  auto initialize_vulkan_loader() const -> bool;
+
+  /// Gets the vulkan instance extensions for the platform.
+  auto instance_extensions() -> ext_vector_t;
+
+  /// Creates a surface for vulkan.
+  /// \param instance The instance to create the surface for.
+  /// \param device   The device to create the surface from.
+  auto create_vulkan_surface(VkInstance instance, VkPhysicalDevice device)
+    -> VkSurfaceKHR;
 };
 
 } // namespace ripple::glow::vk
 
-#endif // RIPPLE_GLOW_VK_PLATFORM_SDL_HELPER_HPP
+#endif // RIPPLE_GLOW_VK_PLATFORM_SDL_PLATFORM_HPP

@@ -34,14 +34,8 @@ namespace ripple::glow::vk {
 template <typename Impl>
 class Platform;
 
-/// Defines a platform for osx.
-class AppleCocoaPlatform;
-/// Defines a platform for windows.
-class WindowsPlatform;
-/// Defines a platform for android.
-class AndroidPlatform;
-/// Defines a platform for linux.
-class LinuxPlatform;
+/// Defines a platform which uses SDL.
+class SdlPlatform;
 /// Defines a headless platform.
 class HeadlessPlatform;
 

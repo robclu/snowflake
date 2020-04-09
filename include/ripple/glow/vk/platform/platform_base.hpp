@@ -17,11 +17,15 @@
 #define RIPPLE_GLOW_VK_PLATFORM_PLATFORM_BASE_HPP
 
 #include "platform_fwd.hpp"
+#include "../vulkan_headers.hpp"
 #include <string>
 #include <type_traits>
-#include <vulkan/vulkan.h>
+#include <vector>
 
 namespace ripple::glow::vk {
+
+/// Alias for the type of the extension vector.
+using ext_vector_t = std::vector<const char*>;
 
 /// The Platform type defines an interface for platform-specific
 /// window-intefration funcitonality.
@@ -75,10 +79,21 @@ class Platform {
     return impl()->create_vulkan_surface(instance, device);
   }
 
+  /// Gets the vulkan instance extensions for the platform.
+  auto get_instance_extensions() -> ext_vector_t {
+    return impl()->instance_extensions();
+  }
+
   /// Initializes the platform with a title.
   /// \param title The title for the window.
   auto init(const std::string& title) -> void {
     impl()->initialize(title);
+  }
+
+  /// Initializes the vulkan loader, returning true if the loading was
+  /// successul.
+  auto init_vulkan_loader() const -> bool {
+    impl()->initialize_vulkan_loader();
   }
 
  private:

@@ -8,6 +8,8 @@
 
 #===== [packages] =============================================================#
 
+set(CMAKE_PREFIX_PATH /usr/local)
+
 #==--- [fmt] ----------------------------------------------------------------==#
 find_package(fmt REQUIRED)
 if (NOT fmt_FOUND)
@@ -24,33 +26,6 @@ if (NOT SDL2_FOUND)
   message(ERROR "SDL2 not found!")
 endif()
 
-if (APPLE)
-  #==--- [app kit] ----------------------------------------------------------==#
-  find_library(APPKIT_LIB AppKit)
-  find_path(APPKIT_INCLUDE_DIR AppKit/AppKit.h)
-  #==--- [cocoa] ------------------------------------------------------------==#
-  find_library(COCOA_LIB Cocoa)
-  find_path(COCOA_INCLUDE_DIR Cocoa/Cocoa.h)
-  #==--- [quartz] -----------------------------------------------------------==#
-  find_library(QUARTZ_CORE_LIB QuartzCore)
-  find_path(QUARTZ_CORE_INCLUDE_DIR QuartzCore/QuartzCore.h)
-  #==------------------------------------------------------------------------==#
-
-  mark_as_advanced(COCOA_LIB QUARTZ_CORE_LIB APPKIT_LIB)
-  mark_as_advanced(
-    APPKIT_INCLUDE_DIR
-    COCOA_INCLUDE_DIR 
-    QUARTZ_CORE_INCLUDE_DIR
-  )
-  set(EXTRA_LIBRARIES ${APPKIT_LIB} ${COCOA_LIBS} ${QUARTZ_CORE_LIB})
-  set(
-    EXTRA_INCLUDE_DIRS 
-    ${APPKIT_INCLUDE_DIR}
-    ${COCOA_INCLUDE_DIR} 
-    ${QUARTZ_CORE_INCLUDE_DIR}
-  )
-endif()
-
 #===== [definitions] ==========================================================#
 
 if (IOS OR ANDROID)
@@ -65,12 +40,19 @@ set(GLOW_INCLUDE_DIR ${glow_SOURCE_DIR}/include)
 set(GLOW_SOURCE_DIR  ${glow_SOURCE_DIR}/src)
 set(SOURCES glow.cpp)
 
-if (APPLE)
+if (GLOW_HEADLESS_PLATFORM)
+else()
   list(
     APPEND SOURCES 
-    ${GLOW_SOURCE_DIR}/vk/apple_cocoa_platform.mm
+    ${GLOW_SOURCE_DIR}/vk/sdl_platform.cpp
   )
- endif(APPLE)
+endif(GLOW_HEADLESS_PLATFORM)
+
+list(
+  APPEND SOURCES
+  ${GLOW_SOURCE_DIR}/vk/context.cpp
+  ${GLOW_SOURCE_DIR}/vk/window.cpp
+)
 
 #===== [applications] =========================================================#
 
@@ -83,7 +65,9 @@ include_directories(
 )
 target_link_libraries(
   glow 
-  ${Vulkan_LIBRARIES}
+  PRIVATE 
+  volk
+  Vulkan::Vulkan
   ${SDL2_LIBRARY}
   ${EXTRA_LIBRARIES}
   fmt::fmt

@@ -10,11 +10,17 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(glow VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${glow_SOURCE_DIR}/cmake")
+set(CMAKE_CXX_STANDARD 17)
+
+#===== [platform] =============================================================#
+
+#===== [compiler flags] =======================================================#
+
 
 if (WIN32)
 
 else()
-  set(CXX_DEFAULT_FLAGS "-std=c++17 -pthread -Wno-c++1z-extensions")
+  set(CXX_DEFAULT_FLAGS "-pthread -Wno-c++1z-extensions")
   set(CXX_PERF_FLAGS    "-O3 -march=native -ffast-math")
   set(CMAKE_CXX_FLAGS_RELEASE "${CXX_DEFAULT_FLAGS} ${CXX_PERF_FLAGS}")
   set(CMAKE_CXX_FLAGS_DEBUG   "${CXX_DEFAULT_FLAGS}")
@@ -32,6 +38,10 @@ else()
   )
 endif()
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+#===== [subdirs] ==============================================================#
 
+
+add_subdirectory(external)
 add_subdirectory(apps)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

@@ -27,27 +27,42 @@ class Window {
  public:
   //==--- [construction] ---------------------------------------------------==//
 
-  /// Constructor for the window, which sets the \p title and the \p x and \p y
-  /// dimensions of the window.
+  /// Constructor for the window, which sets the \p title and the \p width and
+  /// \p height as the dimensions of the window.
   /// \param title  The title of the window.
   /// \param width  The (width) of the window  - pixels in the x dimension.
   /// \param height The (height) of the window - pixels in the y dimension.
-  Window(const std::string& title, uint32_t width, uint32_t height)
-  : _platform(width, height) {
-    _platform.init(title);
-  }
+  Window(const std::string& title, uint32_t width, uint32_t height);
 
-  ~Window()             = default; //!< Default destructor.
-  Window(const Window&) = delete;  //!< Delector copy constructor.
-  Window(Window&&)      = delete;  //!< Deleted move constructor.
+  // clang-format off
+
+  /// Defaulted destructor.
+  ~Window()             = default;
+  /// Deleted copy constructor.
+  Window(const Window&) = delete;
+  /// Deleted move constructor.
+  Window(Window&&)      = delete;
 
   //===--- [operator overloads] --------------------------------------------==//
 
-  auto operator=(const Window&) = delete; //!< Deleted copy assignment operaotr.
-  auto operator=(Window&&) = delete;      //!< Deleted move assignment operator.
+  /// Deleted copy assignment operator.
+  Window& operator=(const Window&) = delete;
+  /// Deleted move assignment operator.
+  Window& operator=(Window&&)     = delete;
+
+  // clang-format on
+
+  //==--- [interface] ------------------------------------------------------==//
+
+  /// Returns true of the window is alive.
+  auto is_alive() const -> bool;
+
+  /// Polls the event loop of the window, returning an event.
+  auto poll_input() -> void;
 
  private:
-  platform_t _platform; //!< The platform with the native window.
+  platform_t _platform;        //!< The platform with the native window.
+  bool       _is_alive = true; //!< If the window is alive.
 };
 
 } // namespace ripple::glow::vk

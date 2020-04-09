@@ -204,7 +204,8 @@ class Logger {
     if (message.length() < buffer_end) {
       std::lock_guard<std::mutex> g(_log_mutex);
       flush();
-      _end += sprintf(&_buffer[_end], message.c_str()) return;
+      _end += sprintf(&_buffer[_end], message.c_str());
+      return;
     }
 
     // message doesn't fit, write what we can and flush.
@@ -225,7 +226,7 @@ class Logger {
 
   /// Flushes the pending messages in the logger to the logging file.
   auto flush() -> void {
-    _log_stream.write(_buffer[0], _end);
+    _log_stream.write(&_buffer[0], _end);
     _end = 0;
   }
 };
@@ -261,7 +262,7 @@ auto log_error(Fmt&& format, FmtArgs&&... fmt_args) -> void {
 template <typename Fmt, typename... FmtArgs>
 auto log_warn(Fmt&& format, FmtArgs&&... fmt_args) -> void {
   if constexpr (logger_t::level <= LogLevel::warning) {
-    logger_t::logger().log<LogLevel::warn>(fmt::format(
+    logger_t::logger().log<LogLevel::warning>(fmt::format(
       "[Warn]  | {0:%H:%M:%S} | {1}\n",
       std::chrono::high_resolution_clock::now().time_since_epoch(),
       fmt::format(format, fmt_args...)));
@@ -286,7 +287,7 @@ auto log_debug(Fmt&& format, FmtArgs&&... fmt_args) -> void {
     logger_t::logger().log<LogLevel::debug>(fmt::format(
       "[Debug] | {0:%H:%M:%S} | {1}\n",
       std::chrono::high_resolution_clock::now().time_since_epoch(),
-      fmt::format(fmt, fmt_args...)));
+      fmt::format(format, fmt_args...)));
   }
 }
 

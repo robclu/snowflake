@@ -17,38 +17,21 @@
 #define RIPPLE_GLOW_VK_PLATFORM_PLATFORM_HPP
 
 #if defined(GLOW_HEADLESS_PLATFORM)
-
-#elif defined(__APPLE__)
-#  include "apple_cocoa_platform.hpp"
-#elif defined(__LINUX__)
-
-#elif defined(__ANDROID__)
-
-#elif defined(_WIN32) || defined(WIN32)
-
 #else
-
+#  include "sdl_platform.hpp"
 #endif
 
 namespace ripple::glow::vk {
 
 /// Alias for the type of the platform to create. The platform is specific to
 /// what we are running on, unless another flag has been defined in the build
-/// to specify the type of the platform. If nothing matches, the platform is a
-/// headless platform.
+/// to specify the type of the platform, such as a headless platform, otherwise
+/// we just use the SDL platform since it handles all common platforms.
 using platform_type_t =
 #if defined(GLOW_HEADLESS_PLATFORM)
   HeadlessPlatform;
-#elif defined(__APPLE__)
-  AppleCocoaPlatform;
-#elif defined(__LINUX__)
-  LinuxPlatform;
-#elif defined(__ANDROID__)
-  AndroidPlatform;
-#elif defined(_WIN32) || defined(WIN32)
-  WindowsPlatform;
 #else
-  HeadlessPlatform;
+  SdlPlatform;
 #endif
 
 } // namespace ripple::glow::vk
