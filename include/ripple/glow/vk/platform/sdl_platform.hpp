@@ -25,7 +25,7 @@ namespace ripple::glow::vk {
 
 /// The SdlPlatform wraps SDL functionality which is common for all platforms
 /// which use SDL.
-class SdlPlatform : Platform<SdlPlatform> {
+class SdlPlatform : public Platform<SdlPlatform> {
   using window_ptr_t    = SDL_Window*;           //!< Window pointer type.
   using base_platform_t = Platform<SdlPlatform>; //!< Base platform type.
   window_ptr_t _window  = nullptr;               //!< Pointer to the window.
@@ -58,22 +58,25 @@ class SdlPlatform : Platform<SdlPlatform> {
 
   //==--- [interface] ------------------------------------------------------==//
 
+  /// Creates a surface for vulkan.
+  /// \param instance The instance to create the surface for.
+  /// \param device   The device to create the surface from.
+  auto create_vulkan_surface(VkInstance instance, VkPhysicalDevice device)
+    -> VkSurfaceKHR;
+
+  /// Gets the vulkan device extensions for the platform.
+  auto get_device_extensions() const -> ext_vector_t;
+
+  /// Gets the vulkan instance extensions for the platform.
+  auto get_instance_extensions() const -> ext_vector_t;
+
   /// Initializes the platform with a \p title.
   /// \param title The title to initialize the platform with.
   auto initialize(const std::string& title) -> void;
 
   /// Initializes the vulkan loader, returning true if the loading was
   /// successul.
-  auto initialize_vulkan_loader() const -> bool;
-
-  /// Gets the vulkan instance extensions for the platform.
-  auto instance_extensions() -> ext_vector_t;
-
-  /// Creates a surface for vulkan.
-  /// \param instance The instance to create the surface for.
-  /// \param device   The device to create the surface from.
-  auto create_vulkan_surface(VkInstance instance, VkPhysicalDevice device)
-    -> VkSurfaceKHR;
+  ripple_no_discard auto initialize_vulkan_loader() const -> bool;
 };
 
 } // namespace ripple::glow::vk

@@ -22,9 +22,9 @@
 #include <vulkan/vulkan_core.h>
 
 #ifndef _WIN32
-#  include <dlfcn.h>
+  #include <dlfcn.h>
 #elif defined(_WIN32)
-#  include <windows.h>
+  #include <windows.h>
 #endif
 
 namespace ripple::glow::vk {
@@ -66,18 +66,18 @@ auto Context::init_loader(PFN_vkGetInstanceProcAddr addr) -> bool {
       if (vulkan_path) {
         module = dlopen(vulkan_path, RTLD_LOCAL | RTLD_LAZY);
       }
-#  if defined(__APPLE__)
+  #if defined(__APPLE__)
       if (!module) {
         module = dlopen("libvulkan.1.dylib", RTLD_LOCAL | RTLD_LAZY);
       }
-#  else
+  #else
       if (!module) {
         module = dlopen("libvulkan.so.1", RTLD_LOCAL | RTLD_LAZY);
       }
       if (!module) {
         module = dlopen("libvulkan.so", RTLD_LOCAL | RTLD_LAZY);
       }
-#  endif
+  #endif
       if (!module) {
         return false;
       }
@@ -218,7 +218,7 @@ auto Context::create_instance(
   auto itr = std::find_if(ins_extensions, ins_ext_end, [](const char* name) {
     return std::strcmp(name, VK_KHR_SURFACE_EXTENSION_NAME) == 0;
   });
-  bool has_surface_extension = itr != (ins_ext_end);
+  bool has_surface_extension = (itr != (ins_ext_end));
 
   if (
     has_surface_extension &&
@@ -266,7 +266,7 @@ auto Context::create_instance(
                                                      : instance_layers.data();
 
   for (auto* ext_name : instance_exts) {
-    log_info("Enabling instance extension: %s.", ext_name);
+    log_info("Enabling instance extension: {0}", ext_name);
   }
 
   if (vkCreateInstance(&info, nullptr, &_instance) != VK_SUCCESS) {
@@ -339,14 +339,12 @@ auto Context::create_device(
     for (auto& d : devices) {
       VkPhysicalDeviceProperties props;
       vkGetPhysicalDeviceProperties(d, &props);
-      log_info("Found Vulkan Device (GPU): %s", props.deviceName);
       log_info(
-        "API: %u.%u.%u",
+        "Found Vulkan Device: {0} - API: {1}.{2}.{3} - Driver : {4}.{5}.{6}",
+        props.deviceName,
         VK_VERSION_MAJOR(props.apiVersion),
         VK_VERSION_MINOR(props.apiVersion),
-        VK_VERSION_PATCH(props.apiVersion));
-      log_info(
-        "Driver: %u.%u.%u",
+        VK_VERSION_PATCH(props.apiVersion),
         VK_VERSION_MAJOR(props.driverVersion),
         VK_VERSION_MINOR(props.driverVersion),
         VK_VERSION_PATCH(props.driverVersion));
@@ -417,18 +415,14 @@ auto Context::create_device(
   vkGetPhysicalDeviceProperties(_phy_dev, &_dev_props);
   vkGetPhysicalDeviceMemoryProperties(_phy_dev, &_dev_mem_props);
 
-  log_info("Selected Vulkan Device: %s", _dev_props.deviceName);
+  log_info("Selected Vulkan Device: {0}", _dev_props.deviceName);
 
-  if (_dev_props.apiVersion >= VK_API_VERSION_1_2) {
-    _features.supports_vulkan_12_device = _features.supports_vulkan_12_instance;
+  if (_dev_props.apiVersion >= VK_API_VERSION_1_1) {
     _features.supports_vulkan_11_device = _features.supports_vulkan_11_instance;
-    log_info("Device supports Vulkan 1.2.");
-  } else if (_dev_props.apiVersion >= VK_API_VERSION_1_1) {
-    _features.supports_vulkan_11_device = _features.supports_vulkan_11_instance;
-    log_info("Device supports Vulkan 1.1.");
+    log_info("Device supports Vulkan 1.1");
   } else if (_dev_props.apiVersion >= VK_API_VERSION_1_0) {
     _features.supports_vulkan_11_device = false;
-    log_info("Device supports Vulkan 1.0.");
+    log_info("Device supports Vulkan 1.0");
   }
 
   uint32_t num_queues;
@@ -969,7 +963,7 @@ auto Context::create_device(
     enabled_layers.empty() ? nullptr : enabled_layers.data();
 
   for (auto* enabled_extension : enabled_extensions) {
-    log_info("Enabling device extension: %s.", enabled_extension);
+    log_info("Enabling device extension: {}", enabled_extension);
   }
 
   if (vkCreateDevice(_phy_dev, &device_info, nullptr, &_device) != VK_SUCCESS) {

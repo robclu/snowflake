@@ -26,7 +26,7 @@
 namespace ripple {
 
 /// Default buffer size for the logger.
-static constexpr size_t logger_default_buffer_size = 4096;
+static constexpr size_t logger_default_buffer_size = 1024;
 
 /// Defines the default file to log to.
 static constexpr const char* const logfile_path = ".glow_log.txt";
@@ -175,7 +175,7 @@ class Logger {
   ///
   /// \param  message The message to log.
   /// \tparam L       The log level for the message.
-  template <LogLevel L, std::enable_if_t<(L > level), int> = 0>
+  template <LogLevel L, std::enable_if_t<(L < level), int> = 0>
   auto log(const std::string& message) -> void {}
 
   /// Logs the \p message, which should already be formatted. This overload is
@@ -184,7 +184,7 @@ class Logger {
   ///
   /// \param  message The message to log.
   /// \tparam L       The log level for the message.
-  template <LogLevel L, std::enable_if_t<(L <= level), int> = 0>
+  template <LogLevel L, std::enable_if_t<(L >= level), int> = 0>
   void log(const std::string& message) {
     const auto rem = buffer_end - _end;
 
@@ -196,7 +196,7 @@ class Logger {
     // message fits in remaining buffer:
     if (message.length() < rem) {
       std::lock_guard<std::mutex> g(_log_mutex);
-      _end += sprintf(&_buffer[_end], message.c_str());
+      _end += sprintf(&_buffer[_end], "%s", message.c_str());
       return;
     }
 
@@ -204,13 +204,13 @@ class Logger {
     if (message.length() < buffer_end) {
       std::lock_guard<std::mutex> g(_log_mutex);
       flush();
-      _end += sprintf(&_buffer[_end], message.c_str());
+      _end += sprintf(&_buffer[_end], "%s", message.c_str());
       return;
     }
 
     // message doesn't fit, write what we can and flush.
     std::lock_guard<std::mutex> g(_log_mutex);
-    snprintf(&_buffer[_end], rem, message.c_str());
+    snprintf(&_buffer[_end], rem, "%s", message.c_str());
     flush();
   }
 
@@ -222,7 +222,8 @@ class Logger {
 
   /// Constructor which initializes the logger with a \p log_file to write to.
   /// \param log_file The file to write the logs to.
-  Logger(const std::string& log_file) : _log_stream(log_file, std::ios::app) {}
+  Logger(const std::string& log_file)
+  : _log_stream(log_file, std::ios::trunc) {}
 
   /// Flushes the pending messages in the logger to the logging file.
   auto flush() -> void {

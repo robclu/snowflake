@@ -4,7 +4,10 @@
             "name": "Mac",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/include/",
                 "${workspaceFolder}/include/**",
+                "${workspaceFolder}/external/**",
+                "/usr/local/include/",
                 "/Library/Frameworks/SDL2.framework/Versions/A/Headers"
             ],
             "defines": [],
@@ -15,7 +18,8 @@
             "cStandard": "c11",
             "configurationProvider": "vector-of-bool.cmake-tools",
             "cppStandard": "c++17",
-            "intelliSenseMode": "clang-x86"
+            "intelliSenseMode": "clang-x86",
+            "compileCommands": "${workspaceFolder}/compile_commands.json"
         }
     ],
     "version": 4

@@ -18,6 +18,7 @@
 
 #include "platform_fwd.hpp"
 #include "../vulkan_headers.hpp"
+#include <ripple/core/util/portability.hpp>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -79,9 +80,14 @@ class Platform {
     return impl()->create_vulkan_surface(instance, device);
   }
 
+  /// Gets the vulkan device extensions for the platform.
+  auto device_extensions() const -> ext_vector_t {
+    return impl()->get_device_extensions();
+  }
+
   /// Gets the vulkan instance extensions for the platform.
-  auto get_instance_extensions() -> ext_vector_t {
-    return impl()->instance_extensions();
+  auto instance_extensions() const -> ext_vector_t {
+    return impl()->get_instance_extensions();
   }
 
   /// Initializes the platform with a title.
@@ -92,7 +98,7 @@ class Platform {
 
   /// Initializes the vulkan loader, returning true if the loading was
   /// successul.
-  auto init_vulkan_loader() const -> bool {
+  ripple_no_discard auto init_vulkan_loader() const -> bool {
     impl()->initialize_vulkan_loader();
   }
 

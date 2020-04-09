@@ -59,8 +59,6 @@ struct DeviceFeatures {
   bool supports_draw_parameters                  = false;
   bool supports_vulkan_11_instance               = true;
   bool supports_vulkan_11_device                 = true;
-  bool supports_vulkan_12_instance               = true;
-  bool supports_vulkan_12_device                 = true;
 
   // clang-format off
 
@@ -209,7 +207,7 @@ class Context {
   VkDebugReportCallbackEXT _debug_callback  = VK_NULL_HANDLE;
   /// Messenger for debugging.
   VkDebugUtilsMessengerEXT _debug_messenger = VK_NULL_HANDLE;
-  // clang-format on
+    // clang-format on
 #endif
 
   //==--- [methods] --------------------------------------------------------==//
