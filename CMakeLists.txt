@@ -16,6 +16,10 @@ set(CMAKE_CXX_STANDARD 17)
 
 #===== [compiler flags] =======================================================#
 
+if (CMAKE_BUILD_TYPE MATCHES "Debug")
+  add_compile_definitions(VALIDATION_ENABLED=1)
+  add_compile_definitions(VULKAN_DEBUG=1)
+endif()
 
 if (WIN32)
 
@@ -23,7 +27,7 @@ else()
   set(CXX_DEFAULT_FLAGS "-pthread -Wno-c++1z-extensions")
   set(CXX_PERF_FLAGS    "-O3 -march=native -ffast-math")
   set(CMAKE_CXX_FLAGS_RELEASE "${CXX_DEFAULT_FLAGS} ${CXX_PERF_FLAGS}")
-  set(CMAKE_CXX_FLAGS_DEBUG   "${CXX_DEFAULT_FLAGS}")
+  set(CMAKE_CXX_FLAGS_DEBUG   "${CXX_DEFAULT_FLAGS} -g")
 endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Release)

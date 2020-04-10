@@ -17,6 +17,7 @@
 #define RIPPLE_GLOW_VK_CONTEXT_HPP
 
 #include "vulkan_headers.hpp"
+#include <tuple>
 
 namespace ripple::glow::vk {
 
@@ -31,99 +32,10 @@ enum class Vendor : uint16_t {
   Qualcomm = 0x5143  //!< Qualcomm vendor kind.
 };
 
-//==--- [device features] --------------------------------------------------==//
-
-/// Defines the features of the device.
-struct DeviceFeatures {
-  bool supports_physical_device_properties2      = false;
-  bool supports_external                         = false;
-  bool supports_dedicated                        = false;
-  bool supports_image_format_list                = false;
-  bool supports_debug_marker                     = false;
-  bool supports_debug_utils                      = false;
-  bool supports_mirror_clamp_to_edge             = false;
-  bool supports_google_display_timing            = false;
-  bool supports_nv_device_diagnostic_checkpoints = false;
-  bool supports_external_memory_host             = false;
-  bool supports_surface_capabilities2            = false;
-  bool supports_full_screen_exclusive            = false;
-  bool supports_update_template                  = false;
-  bool supports_maintenance_1                    = false;
-  bool supports_maintenance_2                    = false;
-  bool supports_maintenance_3                    = false;
-  bool supports_descriptor_indexing              = false;
-  bool supports_conservative_rasterization       = false;
-  bool supports_bind_memory2                     = false;
-  bool supports_get_memory_requirements2         = false;
-  bool supports_draw_indirect_count              = false;
-  bool supports_draw_parameters                  = false;
-  bool supports_vulkan_11_instance               = true;
-  bool supports_vulkan_11_device                 = true;
-
-  // clang-format off
-
-  /// Properties for device subgroup.
-  VkPhysicalDeviceSubgroupProperties              subgroup_properties    = {};
-  /// Properties for 8 bit storage.
-  VkPhysicalDevice8BitStorageFeaturesKHR          storage_8bit_features  = {};
-  /// Properties for 16 bit sotrage.
-  VkPhysicalDevice16BitStorageFeaturesKHR         storage_16bit_features = {};
-  /// Properties for 16 bit float storage.
-  VkPhysicalDeviceFloat16Int8FeaturesKHR          float16_int8_features  = {};
-  /// Featrues for the physical device.
-  VkPhysicalDeviceFeatures                        enabled_features       = {};
-  /// External memory properties for the host.
-  VkPhysicalDeviceExternalMemoryHostPropertiesEXT host_memory_properties = {};
-  /// Features for multi-view.
-  VkPhysicalDeviceMultiviewFeaturesKHR            multiview_features     = {};
-  /// Features for imageless framebuffers.
-  VkPhysicalDeviceImagelessFramebufferFeaturesKHR imageless_features     = {};
-  /// Scalar block layout features.
-  VkPhysicalDeviceScalarBlockLayoutFeaturesEXT    scalar_block_features  = {};
-
-  /// Timeline semaphore features.
-  VkPhysicalDeviceTimelineSemaphoreFeaturesKHR timeline_semaphore_features = {};
-  /// Performance query features.
-  VkPhysicalDevicePerformanceQueryFeaturesKHR  performance_query_features  = {};
-  /// Device host query reset features.
-  VkPhysicalDeviceHostQueryResetFeaturesEXT    host_query_reset_features   = {};
-
-  /// Uniform buffer standard layout features.
-  VkPhysicalDeviceUniformBufferStandardLayoutFeaturesKHR ubo_std_features = {};
-
-  /// Subgroup size control fetures.
-  VkPhysicalDeviceSubgroupSizeControlFeaturesEXT
-    subgroup_size_control_features        = {};
-  /// Subgroup size control properties.
-  VkPhysicalDeviceSubgroupSizeControlPropertiesEXT
-    subgroup_size_control_properties      = {};
-  /// Compute shader derivative featuers.
-  VkPhysicalDeviceComputeShaderDerivativesFeaturesNV
-    compute_shader_derivative_features    = {};
-  /// Device shared demote to helper features.
-  VkPhysicalDeviceShaderDemoteToHelperInvocationFeaturesEXT
-    demote_to_helper_invocation_features  = {};
-  /// Descriptor indexing properties.
-  VkPhysicalDeviceDescriptorIndexingPropertiesEXT
-    descriptor_indexing_properties        = {};
-  /// Conservative rasterization properties.
-  VkPhysicalDeviceConservativeRasterizationPropertiesEXT
-    conservative_rasterization_properties = {};
-  /// Sample conversion features for Ycbcr.
-  VkPhysicalDeviceSamplerYcbcrConversionFeaturesKHR
-    sampler_ycbcr_conversion_features     = {};
-  /// Descriptor indexing features.
-  VkPhysicalDeviceDescriptorIndexingFeaturesEXT 
-    descriptor_indexing_features          = {};
-
-  // clang-format on
-};
-
-/// The Context for vulkan which owns a VkInstance and a VkDevice.
+/// The Context for vulkan which owns all the structs necessary for the vulkan
+/// context. The main purpose of the context is to create the VkInstance and the
+/// VkDevice.
 class Context {
-  /// Defines the type of device features.
-  using dev_features_t = DeviceFeatures;
-
  public:
   //==--- [construction] ---------------------------------------------------==//
 
@@ -163,17 +75,28 @@ class Context {
 
   //==--- [interface] ------------------------------------------------------==//
 
-  /// Initializes the instance and the device, with \p ins_extensions for the
+  /// Creates the instance and the device, with \p ins_extensions for the
   /// instance, and \p dev_extensions for the device. This returns false if the
   /// initialization was not successful.
-  auto init_instance_and_device(
+  auto create_instance_and_device(
     const char** ins_extensions,
     uint32_t     num_ins_extensions,
     const char** dev_extensions,
     uint32_t     num_dev_extesions) -> bool;
 
  private:
-  dev_features_t   _features;                  //!< Device features.
+  //==--- [constants] ------------------------------------------------------==//
+
+  // clang-format off
+  /// Priority for teh graphics queue.
+  static constexpr float graphics_queue_priority_v = 0.5f;
+  /// Priority for the compute queue.
+  static constexpr float compute_queue_priority_v  = 1.0f;
+  /// Priority for the transfer queue.
+  static constexpr float transfer_queue_priority_v = 1.0f;
+
+  //==--- [members] --------------------------------------------------------==//
+
   VkDevice         _device   = VK_NULL_HANDLE; //!< Vulkan device.
   VkInstance       _instance = VK_NULL_HANDLE; //!< Vulkan instance.
   VkPhysicalDevice _phy_dev  = VK_NULL_HANDLE; //!< Physical device.
@@ -182,6 +105,7 @@ class Context {
   VolkDeviceTable _device_table;
 
   VkPhysicalDeviceProperties       _dev_props     = {}; //!< Dev props.
+  VkPhysicalDeviceFeatures2KHR     _dev_features  = {}; //!< Dev features.
   VkPhysicalDeviceMemoryProperties _dev_mem_props = {}; //!< Dev mem props.
 
   VkQueue _graphics_queue = VK_NULL_HANDLE; //!< Queue for graphics.
@@ -197,11 +121,18 @@ class Context {
   uint32_t _transfer_queue_family = VK_QUEUE_FAMILY_IGNORED;
   // clang-format on
 
-  bool _owned_device        = true;  //!< If the device is owned.
-  bool _owned_instance      = true;  //!< If the instance is owned.
-  bool _force_no_validation = false; //!< Ensure no vulkan validation.
+  uint32_t _graphics_queue_index  = 0; //!< Index of the graphics queue.
+  uint32_t _compute_queue_index   = 0; //!< Index of the compute queue.
+  uint32_t _transfer_queue_index  = 0; //!< Index of the transfer queue.
+  unsigned _universal_queue_index = 1; //!< Index of a universal queue.
+
+  bool _supports_vulkan_11       = false; //!< Supports VK >= 1.1
+  bool _supports_surface_caps_2  = false; //!< Supports surf caps 2.
+  bool _supports_phy_dev_props_2 = false; //!< Supports dev props 2.
+  bool _supports_external        = false; //!< Supports external props.
 
 #ifdef VULKAN_DEBUG
+  bool _supports_debug_utils = false; //!< Supports debug utils.
   // clang-format off
   /// Callback for debugging.
   VkDebugReportCallbackEXT _debug_callback  = VK_NULL_HANDLE;
@@ -213,26 +144,20 @@ class Context {
   //==--- [methods] --------------------------------------------------------==//
 
   /// Creates the vulkan device with the \p dev pysical device, the \p surface,
-  /// \p dev_extensions, \p dev_layers, and \p features.
-  /// \param dev The physical device.
-  /// \param surface The surface for the device.
+  /// \p dev_extensions, and \p dev_layers.
+  /// \param dev            The physical device.
+  /// \param surface        The surface for the device.
   /// \param dev_extensions The required device extensions.
   /// \param num_extensions The number of extensions.
   /// \param dev_layers     The required device layers.
   /// \param num_layers     The number of layers.
-  /// \param features       The required features for the device.
   auto create_device(
-    VkPhysicalDevice          dev,
-    VkSurfaceKHR              surface,
-    const char**              dev_extesions,
-    uint32_t                  num_extensions,
-    const char**              dev_layers,
-    uint32_t                  num_layers,
-    VkPhysicalDeviceFeatures* features) -> bool;
-
-  /// Checks if descriptor indexing features are present, and if so, then adds
-  /// that they are to the feature struct.
-  auto check_descriptor_indexing_features() -> void;
+    VkPhysicalDevice dev,
+    VkSurfaceKHR     surface,
+    const char**     dev_extesions,
+    uint32_t         num_extensions,
+    const char**     dev_layers,
+    uint32_t         num_layers) -> bool;
 
   /// Creates the vulkan instance with \p ins_extensions extensions and \p
   /// num_extensions number of extensions. Returns false if the instance could
@@ -242,7 +167,77 @@ class Context {
   auto
   create_instance(const char** ins_extensions, uint32_t num_extension) -> bool;
 
-  /// Destoys the context and assosciated resources.
+  /// Creates the queue information for device creation, returning a vector of
+  /// filled VkDeviceQueueCreateInfo for each queue, and a vector of proritities
+  /// for each of the queues. Since the VkDeviceQueueCreateInfo's in the vector
+  /// refere to the priorities in the second vector, the second vector needs to
+  /// be kept around until the device is created.
+  auto create_queue_info() const
+    -> std::tuple<std::vector<VkDeviceQueueCreateInfo>, std::vector<float>>;
+
+  /// Returns the flags required for the device.
+  auto required_flags() const -> VkQueueFlags {
+    return VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
+  }
+
+  /// Selects a physical device which supports the \p surface, and which has the
+  /// queue flags returned by `required_flags()`.
+  ///
+  /// \post The following will be set when this return true:
+  ///         - _phy_dev is set to the selected device
+  ///         - _dev_props is set to the _phy_dev device properties
+  ///         - _dev_mem_props is set to the _phy_dev device mem properties
+  ///         - _graphics_queue_family is set to the index of the gfx queue
+  ///
+  /// \param surface The surface to provide support for.
+  auto select_physical_device(VkSurfaceKHR surface) -> bool;
+
+  /// Selects all queue families. This first tries to select separate queue
+  /// families, and then ensures that all queue families have been selected, and
+  /// sets the values of the indices of the queues in the queue families.
+  ///
+  /// \param queue_props A vector of queue properties.
+  auto
+  select_queue_families(const std::vector<VkQueueFamilyProperties>& queue_props)
+    -> void;
+
+  /// Finds the indices for the queues.
+
+  /// Tries to select as many separate queue families as possible. To ensure
+  /// that all
+  ///
+  /// \param queue_props A vector of queue properties.
+  auto try_select_separate_queue_families(
+    const std::vector<VkQueueFamilyProperties>& queue_props) -> void;
+
+  /// Checks that all the queue families have valid indices, and sets the
+
+  /// Validates the \p dev_extensions against those available for the context
+  /// physical device.
+  ///
+  /// \pre `select_physical_device()` should have been called prviously so that
+  ///      a valid physical device can be validated against.
+  ///
+  /// Returns true if the validation succeeds.
+  ///
+  /// \param dev_extensions The required device extensions.
+  /// \param num_extensions The number of extensions.
+  auto validate_extensions(const char** dev_extensions, uint32_t num_extensions)
+    -> bool;
+
+  /// Validates the \p dev_layers against those available for the context
+  /// physical device.
+  ///
+  /// \pre `select_physical_device()` should have been called prviously so that
+  ///      a valid physical device can be validated against.
+  ///
+  /// Returns true if the validation succeeds.
+  ///
+  /// \param dev_layers The required device layers.
+  /// \param num_layers The number of layers.
+  auto validate_layers(const char** dev_layers, uint32_t num_layers) -> bool;
+
+  /// Destroys the context and assosciated resources.
   auto destroy() -> void;
 };
 

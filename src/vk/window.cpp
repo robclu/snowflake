@@ -54,13 +54,14 @@ auto Window::init() -> bool {
   auto dev_extensions = _platform.device_extensions();
   _context.reset(new Context);
 
-  if (!_context->init_instance_and_device(
+  if (!_context->create_instance_and_device(
         ins_extensions.data(),
         ins_extensions.size(),
         dev_extensions.data(),
         dev_extensions.size())) {
     return false;
   }
+
   return true;
 }
 
