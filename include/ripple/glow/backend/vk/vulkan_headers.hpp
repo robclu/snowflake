@@ -1,6 +1,6 @@
-//==--- glow/vk/vulkan_headers.hpp ------------------------- -*- C++ -*- ---==//
+//==--- glow/backend/vulkan_headers.hpp -------------------- -*- C++ -*- ---==//
 //
-//                            Ripple - Core
+//                            Ripple - Glow
 //
 //                      Copyright (c) 2020 Ripple
 //
@@ -8,15 +8,15 @@
 //
 //==------------------------------------------------------------------------==//
 //
-/// \file  vulkan.hpp
+/// \file  vulkan_headers.hpp
 /// \brief This file includes vulkan functionality.
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_VK_VULKAN_HEADERS_HPP
-#define RIPPLE_GLOW_VK_VULKAN_HEADERS_HPP
+#ifndef RIPPLE_GLOW_BACKEND_VULKAN_VULKAN_HEADERS_HPP
+#define RIPPLE_GLOW_BACKEND_VULKAN_VULKAN_HEADERS_HPP
 
 #include "volk.h"
 #include <cstdlib>
 
-#endif // RIPPLE_GLOW_VK_VULKAN_HEADERS_HPP
+#endif // RIPPLE_GLOW_BACKEND_VULKAN_VULKAN_HEADERS_HPP

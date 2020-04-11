@@ -1,8 +1,8 @@
-//==--- glow/vk/platform/platform_base.hpp ----------------- -*- C++ -*- ---==//
+//==--- glow/backend/platform/platform_base.hpp ------------ -*- C++ -*- ---==//
 //
 //                              Ripple - Glow
 //
-//                      Copyright (c) 2020 Rob Clucas
+//                      Copyright (c) 2020 Ripple
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
@@ -13,17 +13,17 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_VK_PLATFORM_PLATFORM_BASE_HPP
-#define RIPPLE_GLOW_VK_PLATFORM_PLATFORM_BASE_HPP
+#ifndef RIPPLE_GLOW_BACKEND_PLATFORM_PLATFORM_BASE_HPP
+#define RIPPLE_GLOW_BACKEND_PLATFORM_PLATFORM_BASE_HPP
 
 #include "platform_fwd.hpp"
-#include "../vulkan_headers.hpp"
+#include "../vk/vulkan_headers.hpp"
 #include <ripple/core/util/portability.hpp>
 #include <string>
 #include <type_traits>
 #include <vector>
 
-namespace ripple::glow::vk {
+namespace ripple::glow::backend {
 
 /// Alias for the type of the extension vector.
 using ext_vector_t = std::vector<const char*>;
@@ -107,6 +107,6 @@ class Platform {
   uint32_t _height = default_h; //!< Height of the window
 };
 
-} // namespace ripple::glow::vk
+} // namespace ripple::glow::backend
 
-#endif // RIPPLE_GLOW_VK_PLATFORM_PLATFORM_HPP
+#endif // RIPPLE_GLOW_BACKEND_PLATFORM_PLATFORM_HPP

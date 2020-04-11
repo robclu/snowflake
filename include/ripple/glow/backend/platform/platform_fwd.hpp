@@ -1,8 +1,8 @@
-//==--- glow/vk/platform/platform_fwd.hpp ------------------ -*- C++ -*- ---==//
+//==--- glow/backend/platform/platform_fwd.hpp ------------- -*- C++ -*- ---==//
 //
 //                              Ripple - Glow
 //
-//                      Copyright (c) 2020 Rob Clucas
+//                      Copyright (c) 2020 Ripple
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
@@ -13,10 +13,10 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_VK_PLATFORM_FWD_HPP
-#define RIPPLE_GLOW_VK_PLATFORM_FWD_HPP
+#ifndef RIPPLE_GLOW_BACKEND_PLATFORM_FWD_HPP
+#define RIPPLE_GLOW_BACKEND_PLATFORM_FWD_HPP
 
-namespace ripple::glow::vk {
+namespace ripple::glow::backend {
 
 //==--- [forward declarations] ---------------------------------------------==//
 
@@ -39,6 +39,6 @@ class SdlPlatform;
 /// Defines a headless platform.
 class HeadlessPlatform;
 
-} // namespace ripple::glow::vk
+} // namespace ripple::glow::backend
 
-#endif // RIPPLE_GLOW_VK_PLATFORM_FWD_HPP
+#endif // RIPPLE_GLOW_BACKEND_PLATFORM_FWD_HPP

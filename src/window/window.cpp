@@ -1,4 +1,4 @@
-//==--- glow/src/vk/window.cpp -------------- -*- C++ -*- ---==//
+//==--- glow/src/window/window.cpp ------------------------- -*- C++ -*- ---==//
 //
 //                            Ripple - Glow
 //
@@ -14,9 +14,9 @@
 //==------------------------------------------------------------------------==//
 
 #include <ripple/core/log/logger.hpp>
-#include <ripple/glow/vk/window/window.hpp>
+#include <ripple/glow/window/window.hpp>
 
-namespace ripple::glow::vk {
+namespace ripple::glow {
 
 //==--- [con/destruction] --------------------------------------------------==//
 
@@ -50,19 +50,13 @@ auto Window::poll_input() -> void {
 //==--- [private] ----------------------------------------------------------==//
 
 auto Window::init() -> bool {
-  auto ins_extensions = _platform.instance_extensions();
-  auto dev_extensions = _platform.device_extensions();
-  _context.reset(new Context);
+  _engine = Engine::create(_platform);
 
-  if (!_context->create_instance_and_device(
-        ins_extensions.data(),
-        ins_extensions.size(),
-        dev_extensions.data(),
-        dev_extensions.size())) {
+  if (_engine == nullptr) {
+    log_error("Failed to create the engine.");
     return false;
   }
-
   return true;
 }
 
-} // namespace ripple::glow::vk
+} // namespace ripple::glow

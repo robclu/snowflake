@@ -1,4 +1,4 @@
-//==--- glow/vk/platform/platform.hpp ---------------------- -*- C++ -*- ---==//
+//==--- glow/backend/platform/platform.hpp ----------------- -*- C++ -*- ---==//
 //
 //                              Ripple - Glow
 //
@@ -13,15 +13,15 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_VK_PLATFORM_PLATFORM_HPP
-#define RIPPLE_GLOW_VK_PLATFORM_PLATFORM_HPP
+#ifndef RIPPLE_GLOW_BACKEND_PLATFORM_PLATFORM_HPP
+#define RIPPLE_GLOW_BACKEND_PLATFORM_PLATFORM_HPP
 
 #if defined(GLOW_HEADLESS_PLATFORM)
 #else
-#  include "sdl_platform.hpp"
+  #include "sdl_platform.hpp"
 #endif
 
-namespace ripple::glow::vk {
+namespace ripple::glow::backend {
 
 /// Alias for the type of the platform to create. The platform is specific to
 /// what we are running on, unless another flag has been defined in the build
@@ -34,6 +34,6 @@ using platform_type_t =
   SdlPlatform;
 #endif
 
-} // namespace ripple::glow::vk
+} // namespace ripple::glow::backend
 
-#endif // RIPPLE_GLOW_VK_PLATFORM_PLATFORM_HPP
+#endif // RIPPLE_GLOW_BACKEND_PLATFORM_PLATFORM_HPP

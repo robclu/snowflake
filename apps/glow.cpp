@@ -1,7 +1,7 @@
-#include <ripple/glow/vk/window/window.hpp>
+#include <ripple/glow/window/window.hpp>
 
 auto run_application() -> void {
-  ripple::glow::vk::Window window("glow", 512, 512);
+  ripple::glow::Window window("glow", 512, 512);
 
   while (window.is_alive()) {
     window.poll_input();

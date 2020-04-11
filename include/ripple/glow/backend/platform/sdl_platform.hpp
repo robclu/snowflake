@@ -1,8 +1,8 @@
-//==--- glow/vk/platform/sdl_platform.hpp ------------------ -*- C++ -*- ---==//
+//==--- glow/backend/platform/sdl_platform.hpp ------------- -*- C++ -*- ---==//
 //
 //                              Ripple - Glow
 //
-//                      Copyright (c) 2020 Rob Clucas
+//                      Copyright (c) 2020 Ripple
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
@@ -14,14 +14,14 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_VK_PLATFORM_SDL_PLATFORM_HPP
-#define RIPPLE_GLOW_VK_PLATFORM_SDL_PLATFORM_HPP
+#ifndef RIPPLE_GLOW_BACKEND_PLATFORM_SDL_PLATFORM_HPP
+#define RIPPLE_GLOW_BACKEND_PLATFORM_SDL_PLATFORM_HPP
 
 #include "platform_base.hpp"
 #include <SDL.h>
 #include <string>
 
-namespace ripple::glow::vk {
+namespace ripple::glow::backend {
 
 /// The SdlPlatform wraps SDL functionality which is common for all platforms
 /// which use SDL.
@@ -79,6 +79,6 @@ class SdlPlatform : public Platform<SdlPlatform> {
   ripple_no_discard auto initialize_vulkan_loader() const -> bool;
 };
 
-} // namespace ripple::glow::vk
+} // namespace ripple::glow::backend
 
 #endif // RIPPLE_GLOW_VK_PLATFORM_SDL_PLATFORM_HPP

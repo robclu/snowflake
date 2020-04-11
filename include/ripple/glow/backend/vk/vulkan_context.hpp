@@ -1,25 +1,25 @@
-//==--- glow/vk/context.hpp -------------------------------- -*- C++ -*- ---==//
+//==--- glow/backend/vk/vulkan_context.hpp ----------------- -*- C++ -*- ---==//
 //
 //                              Ripple - Glow
 //
-//                      Copyright (c) 2020 Rob Clucas
+//                      Copyright (c) 2020 Ripple
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
 //==------------------------------------------------------------------------==//
 //
-/// \file  context.hpp
+/// \file  vulkan_context.hpp
 /// \brief Header file for a Vulkan context.
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_VK_CONTEXT_HPP
-#define RIPPLE_GLOW_VK_CONTEXT_HPP
+#ifndef RIPPLE_GLOW_BACKEND_VULKAN_CONTEXT_HPP
+#define RIPPLE_GLOW_BACKEND_VULKAN_CONTEXT_HPP
 
 #include "vulkan_headers.hpp"
 #include <tuple>
 
-namespace ripple::glow::vk {
+namespace ripple::glow::backend {
 
 //==--- [vendor] -----------------------------------------------------------==//
 
@@ -32,36 +32,37 @@ enum class Vendor : uint16_t {
   Qualcomm = 0x5143  //!< Qualcomm vendor kind.
 };
 
-/// The Context for vulkan which owns all the structs necessary for the vulkan
-/// context. The main purpose of the context is to create the VkInstance and the
+/// The VulkanContext type holds state for vulkan. Specifically, it created an
+/// instance, physical device, finds queues and queue indices, and create a
+/// logical device.
 /// VkDevice.
-class Context {
+class VulkanContext {
  public:
   //==--- [construction] ---------------------------------------------------==//
 
   // clang-format off
 
   /// Default constructor for the constext.
-  Context() = default;
+  VulkanContext() = default;
 
   /// Deleted copy construction, since only one context is allowed.
-  Context(const Context&) = delete;
+  VulkanContext(const VulkanContext&) = delete;
 
   /// Defaulted move constructor.
-  Context(Context&&) noexcept = default;
+  VulkanContext(VulkanContext&&) noexcept = default;
 
   /// Destructor to clean up the resources.
-  ~Context();
+  ~VulkanContext();
 
   // clang-format on
 
   //==--- [operator overloads] ---------------------------------------------==//
 
   /// Deleted copy assignment since only one context is allowed.
-  auto operator=(const Context&) = delete;
+  auto operator=(const VulkanContext&) = delete;
 
   /// Defaulted move assignment.
-  auto operator=(Context&&) noexcept -> Context& = default;
+  auto operator=(VulkanContext&&) noexcept -> VulkanContext& = default;
 
   //==--- [static] ---------------------------------------------------------==//
 
@@ -74,6 +75,8 @@ class Context {
   static auto get_application_info() -> const VkApplicationInfo&;
 
   //==--- [interface] ------------------------------------------------------==//
+
+  /// Creates the context
 
   /// Creates the instance and the device, with \p ins_extensions for the
   /// instance, and \p dev_extensions for the device. This returns false if the
@@ -241,6 +244,6 @@ class Context {
   auto destroy() -> void;
 };
 
-} // namespace ripple::glow::vk
+} // namespace ripple::glow::backend
 
 #endif // RIPPLE_GLOW_VK_CONTEXT_HPP

@@ -14,13 +14,13 @@
 //==------------------------------------------------------------------------==//
 
 #include <ripple/core/log/logger.hpp>
-#include <ripple/glow/vk/platform/sdl_platform.hpp>
-#include <ripple/glow/vk/context.hpp>
+#include <ripple/glow/backend/platform/sdl_platform.hpp>
+#include <ripple/glow/backend/vk/vulkan_context.hpp>
 #include <SDL_syswm.h>
 #include <SDL_vulkan.h>
 #include <cassert>
 
-namespace ripple::glow::vk {
+namespace ripple::glow::backend {
 
 //==--- [con/destruction] --------------------------------------------------==//
 
@@ -89,7 +89,7 @@ auto SdlPlatform::initialize(const std::string& title) -> void {
 /// Initializes the vulkan loader, returning true if the loading was
 /// successul.
 auto SdlPlatform::initialize_vulkan_loader() const -> bool {
-  if (!vk::Context::init_loader(
+  if (!VulkanContext::init_loader(
         (PFN_vkGetInstanceProcAddr)SDL_Vulkan_GetVkGetInstanceProcAddr())) {
     log_error("Sdl platform failed to create Vulkan loader.");
     return false;
@@ -97,4 +97,4 @@ auto SdlPlatform::initialize_vulkan_loader() const -> bool {
   return true;
 }
 
-} // namespace ripple::glow::vk
+} // namespace ripple::glow::backend

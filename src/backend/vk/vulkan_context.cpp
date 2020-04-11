@@ -14,7 +14,7 @@
 //==------------------------------------------------------------------------==//
 
 #include <ripple/core/log/logger.hpp>
-#include <ripple/glow/vk/context.hpp>
+#include <ripple/glow/backend/vk/vulkan_context.hpp>
 #include <algorithm>
 #include <cstring>
 #include <vector>
@@ -25,7 +25,7 @@
   #include <windows.h>
 #endif
 
-namespace ripple::glow::vk {
+namespace ripple::glow::backend {
 
 //==--- [debug functions] --------------------------------------------------==//
 
@@ -36,7 +36,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_messenger_cb(
   VkDebugUtilsMessageTypeFlagsEXT             message_type,
   const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data,
   void*                                       p_user_data) {
-  auto* context = static_cast<Context*>(p_user_data);
+  auto* context = static_cast<VulkanContext*>(p_user_data);
 
   switch (message_severity) {
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: {
@@ -100,7 +100,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug_cb(
   const char*                p_layer_prefix,
   const char*                p_message,
   void*                      p_user_data) {
-  auto* context = static_cast<Context*>(p_user_data);
+  auto* context = static_cast<VulkanContext*>(p_user_data);
 
   // False positives about lack of srcAccessMask/dstAccessMask.
   if (strcmp(p_layer_prefix, "DS") == 0 && message_code == 10) {
@@ -127,13 +127,13 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug_cb(
 
 //==--- [con/destruction] --------------------------------------------------==//
 
-Context::~Context() {
+VulkanContext::~VulkanContext() {
   destroy();
 }
 
 //==--- [static public] ----------------------------------------------------==//
 
-auto Context::get_application_info() -> const VkApplicationInfo& {
+auto VulkanContext::get_application_info() -> const VkApplicationInfo& {
   // clang-format off
   static const VkApplicationInfo info = {
     VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -150,7 +150,7 @@ auto Context::get_application_info() -> const VkApplicationInfo& {
 static bool       loader_is_initialzied;
 static std::mutex loader_init_lock;
 
-auto Context::init_loader(PFN_vkGetInstanceProcAddr addr) -> bool {
+auto VulkanContext::init_loader(PFN_vkGetInstanceProcAddr addr) -> bool {
   std::lock_guard<std::mutex> guard(loader_init_lock);
   if (loader_is_initialzied) {
     return true;
@@ -213,7 +213,7 @@ auto Context::init_loader(PFN_vkGetInstanceProcAddr addr) -> bool {
 
 //==--- [public] -----------------------------------------------------------==//
 
-auto Context::create_instance_and_device(
+auto VulkanContext::create_instance_and_device(
   const char** ins_extensions,
   uint32_t     num_ins_extensions,
   const char** dev_extensions,
@@ -243,7 +243,7 @@ auto Context::create_instance_and_device(
   return true;
 }
 
-auto Context::create_instance(
+auto VulkanContext::create_instance(
   const char** ins_extensions, uint32_t num_extensions) -> bool {
   auto                 app_info = get_application_info();
   VkInstanceCreateInfo info     = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
@@ -416,7 +416,7 @@ auto Context::create_instance(
 
 //==--- [private] ----------------------------------------------------------==//
 
-auto Context::select_queue_families(
+auto VulkanContext::select_queue_families(
   const std::vector<VkQueueFamilyProperties>& queue_props) -> void {
   try_select_separate_queue_families(queue_props);
 
@@ -441,7 +441,7 @@ auto Context::select_queue_families(
   }
 }
 
-auto Context::try_select_separate_queue_families(
+auto VulkanContext::try_select_separate_queue_families(
   const std::vector<VkQueueFamilyProperties>& queue_props) -> void {
   const auto   num_queues         = queue_props.size();
   VkQueueFlags required           = VK_QUEUE_COMPUTE_BIT;
@@ -478,8 +478,8 @@ auto Context::try_select_separate_queue_families(
   }
 }
 
-auto Context::select_physical_device(VkSurfaceKHR surface) -> bool {
-  const auto success = [](auto result) -> bool {
+auto VulkanContext::select_physical_device(VkSurfaceKHR surface) -> bool {
+  const auto success = [](const auto result) -> bool {
     return result == VK_SUCCESS;
   };
 
@@ -548,7 +548,7 @@ auto Context::select_physical_device(VkSurfaceKHR surface) -> bool {
   return false;
 }
 
-auto Context::validate_extensions(
+auto VulkanContext::validate_extensions(
   const char** dev_req_extensions, uint32_t num_req_extensions) -> bool {
   uint32_t ext_count = 0;
   vkEnumerateDeviceExtensionProperties(_phy_dev, nullptr, &ext_count, nullptr);
@@ -577,7 +577,7 @@ auto Context::validate_extensions(
   return true;
 }
 
-auto Context::validate_layers(
+auto VulkanContext::validate_layers(
   const char** dev_req_layers, uint32_t num_req_layers) -> bool {
   uint32_t layer_count = 0;
   vkEnumerateDeviceLayerProperties(_phy_dev, &layer_count, nullptr);
@@ -606,12 +606,8 @@ auto Context::validate_layers(
   return true;
 }
 
-auto Context::create_queue_info() const
+auto VulkanContext::create_queue_info() const
   -> std::tuple<std::vector<VkDeviceQueueCreateInfo>, std::vector<float>> {
-  constexpr float graphics_queue_prio = 0.5f;
-  constexpr float compute_queue_prio  = 1.0f;
-  constexpr float transfer_queue_prio = 1.0f;
-
   uint32_t queue_count;
   vkGetPhysicalDeviceQueueFamilyProperties(_phy_dev, &queue_count, nullptr);
   auto queue_props = std::vector<VkQueueFamilyProperties>(queue_count);
@@ -621,9 +617,9 @@ auto Context::create_queue_info() const
   // clang-format off
   auto queue_info = std::vector<VkDeviceQueueCreateInfo>();
   auto prio       = std::vector<float>{
-    Context::graphics_queue_priority_v,
-    Context::compute_queue_priority_v,
-                                 Context::transfer_queue_priority_v};
+    VulkanContext::graphics_queue_priority_v,
+    VulkanContext::compute_queue_priority_v,
+    VulkanContext::transfer_queue_priority_v};
   // clang-format on
 
   // Definitely have a queue for graphics:
@@ -658,7 +654,7 @@ auto Context::create_queue_info() const
   return std::make_tuple(std::move(queue_info), std::move(prio));
 }
 
-auto Context::create_device(
+auto VulkanContext::create_device(
   VkPhysicalDevice dev,
   VkSurfaceKHR     surface,
   const char**     dev_req_extensions,
@@ -765,7 +761,7 @@ auto Context::create_device(
   return true;
 }
 
-auto Context::destroy() -> void {
+auto VulkanContext::destroy() -> void {
   if (_device != VK_NULL_HANDLE) {
     _device_table.vkDeviceWaitIdle(_device);
   }
@@ -789,4 +785,4 @@ auto Context::destroy() -> void {
   }
 }
 
-} // namespace ripple::glow::vk
+} // namespace ripple::glow::backend

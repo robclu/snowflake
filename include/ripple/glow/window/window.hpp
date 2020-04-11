@@ -13,22 +13,28 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_VK_WINDOW_WINDOW_HPP
-#define RIPPLE_GLOW_VK_WINDOW_WINDOW_HPP
+#ifndef RIPPLE_GLOW_WINDOW_WINDOW_HPP
+#define RIPPLE_GLOW_WINDOW_WINDOW_HPP
 
-#include "../context.hpp"
-#include "../platform/platform.hpp"
+#include "../engine/engine.hpp"
+#include "../backend/platform/platform.hpp"
 #include <ripple/core/util/portability.hpp>
 
-namespace ripple::glow::vk {
+namespace ripple::glow {
 
-/// The Window type defines the generic functionality for a window. This can be
-/// a native window for the platform, which is the _common_ case, in which case
-/// rendering will per performed on the native window, but it could also be
-/// rendering to a swapchain which is not displayed, such as in _headless_ mode.
+/// The Window type defines the generic functionality for a window. This can
+/// be a native window for the platform, which is the _common_ case, in which
+/// case rendering will per performed on the native window, but it could also
+/// be rendering to a swapchain which is not displayed, such as in _headless_
+/// mode.
 class Window {
-  using platform_t = platform_type_t; //!< Defines the type of the platform.
-  using context_t  = std::unique_ptr<Context>; //!< Rendering context.
+  // clang-format off
+  /// Defines the type of the platform.
+  using platform_t   = backend::platform_type_t;
+  /// Defines the type of the driver pointer.
+  using engine_ptr_t = Engine*;
+  // clang-format on
+
  public:
   //==--- [construction] ---------------------------------------------------==//
 
@@ -66,14 +72,14 @@ class Window {
   auto poll_input() -> void;
 
  private:
-  platform_t _platform;           //!< The platform with the native window.
-  context_t  _context  = nullptr; //!< Vulkan rendering context.
-  bool       _is_alive = true;    //!< If the window is alive.
+  platform_t   _platform;        //!< The platform for the window.
+  engine_ptr_t _engine;          //!< Pointer to the engine.
+  bool         _is_alive = true; //!< If the window is alive.
 
   /// Initializes the window and the rendering context for the window.
   auto init() -> bool;
 };
 
-} // namespace ripple::glow::vk
+} // namespace ripple::glow
 
-#endif // RIPPLE_GLOW_VK_WINDOW_WINDOW_HPP
+#endif // RIPPLE_GLOW_WINDOW_WINDOW_HPP

@@ -44,14 +44,16 @@ if (GLOW_HEADLESS_PLATFORM)
 else()
   list(
     APPEND SOURCES 
-    ${GLOW_SOURCE_DIR}/vk/sdl_platform.cpp
+    ${GLOW_SOURCE_DIR}/backend/platform/sdl_platform.cpp
   )
 endif(GLOW_HEADLESS_PLATFORM)
 
 list(
   APPEND SOURCES
-  ${GLOW_SOURCE_DIR}/vk/context.cpp
-  ${GLOW_SOURCE_DIR}/vk/window.cpp
+  ${GLOW_SOURCE_DIR}/backend/vk/vulkan_context.cpp
+  ${GLOW_SOURCE_DIR}/backend/vk/vulkan_driver.cpp
+  ${GLOW_SOURCE_DIR}/engine/engine.cpp
+  ${GLOW_SOURCE_DIR}/window/window.cpp
 )
 
 #===== [applications] =========================================================#
