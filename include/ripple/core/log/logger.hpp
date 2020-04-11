@@ -169,6 +169,14 @@ class Logger {
     return l;
   }
 
+  /// Flushes the pending messages in the logger to the logging file.
+  /// Note that this claims the mutex to perform the write, so it should only be
+  /// called to flush the logger if a termination happens.
+  auto flush() -> void {
+    _log_stream.write(&_buffer[0], _end);
+    _end = 0;
+  }
+
   /// Never Logs the \p message, which should already be formatted. This
   /// overload is enabled if the level L is _more than_ the level of the
   /// logger, and will be compiled away.
@@ -224,12 +232,6 @@ class Logger {
   /// \param log_file The file to write the logs to.
   Logger(const std::string& log_file)
   : _log_stream(log_file, std::ios::trunc) {}
-
-  /// Flushes the pending messages in the logger to the logging file.
-  auto flush() -> void {
-    _log_stream.write(&_buffer[0], _end);
-    _end = 0;
-  }
 };
 
 //==--- [alias for the logger] ---------------------------------------------==//
