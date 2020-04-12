@@ -66,6 +66,9 @@ class Platform {
  public:
   //==--- [interface] ------------------------------------------------------==//
 
+  /// Constructor to create a platform with a default size.
+  Platform() = default;
+
   /// Constructor for the platform, which sets the \p x and \py dimensions
   /// of the surface for the platform.
   /// \param width  The (width) of the surface  - pixels in the x dimension.
@@ -90,16 +93,41 @@ class Platform {
     return impl()->get_instance_extensions();
   }
 
-  /// Initializes the platform with a title.
-  /// \param title The title for the window.
-  auto init(const std::string& title) -> void {
-    impl()->initialize(title);
+  /// Returns true if the platform is still alive.
+  auto is_alive() const -> bool {
+    return impl()->is_alive_impl();
   }
 
-  /// Initializes the vulkan loader, returning true if the loading was
-  /// successul.
-  ripple_no_discard auto init_vulkan_loader() const -> bool {
-    impl()->initialize_vulkan_loader();
+  /// Polls the platform for input events, handling any events which happen.
+  auto poll_input() -> void {
+    impl()->poll_input_impl();
+  }
+
+  /// Resizes the platform surface.
+  /// \param width  The width to resize to.
+  /// \param height The height to resize to.
+  auto resize(uint32_t width, uint32_t height) -> void {
+    _width  = width;
+    _height = height;
+    impl()->resize_impl();
+  }
+
+  /// Sets the width of the platform surface to \p width.
+  /// \param width The width to set the platform to.
+  auto set_surface_width(uint32_t width) -> void {
+    _width = width;
+  }
+
+  /// Sets the height of the platform surface  to \p height.
+  /// \param height The height to set the platform to.
+  auto set_surface_height(uint32_t height) -> void {
+    _height = height;
+  }
+
+  /// Sets the title of the platform.
+  /// \param title The title for the platform.
+  auto set_title(const std::string& title) -> void {
+    impl()->set_title_impl(title);
   }
 
  private:

@@ -20,10 +20,8 @@ namespace ripple::glow {
 
 //==--- [con/destruction] --------------------------------------------------==//
 
-Window::Window(const std::string& title, uint32_t width, uint32_t height)
-: _platform(title, width, height) {
-  _is_alive = _platform.initialize_vulkan_loader();
-  if (!init()) {
+Window::Window(const std::string& title, uint32_t width, uint32_t height) {
+  if (!init(title, width, height)) {
     log_error("Failed to initialize window.");
   }
 }
@@ -31,31 +29,35 @@ Window::Window(const std::string& title, uint32_t width, uint32_t height)
 //==--- [interface] --------------------------------------------------------==//
 
 auto Window::is_alive() const -> bool {
-  return _is_alive;
+  return _engine->platform()->is_alive();
 }
 
 auto Window::poll_input() -> void {
-  SDL_Event e;
-  while (SDL_PollEvent(&e)) {
-    switch (e.type) {
-      case SDL_QUIT: {
-        _is_alive = false;
-        break;
-        default: break;
-      }
-    }
-  }
+  _engine->platform()->poll_input();
 }
 
 //==--- [private] ----------------------------------------------------------==//
 
-auto Window::init() -> bool {
-  _engine = Engine::create(_platform);
+auto Window::init(const std::string& title, uint32_t width, uint32_t height)
+  -> bool {
+  _engine = Engine::create();
 
   if (_engine == nullptr) {
     log_error("Failed to create the engine.");
     return false;
   }
+
+  auto* platform = _engine->platform();
+  if (platform == nullptr) {
+    log_error("Failed to create the platform.");
+    return false;
+  }
+
+  platform->set_surface_width(width);
+  platform->set_surface_height(height);
+  platform->set_title(title);
+  platform->resize(width, height);
+
   return true;
 }
 

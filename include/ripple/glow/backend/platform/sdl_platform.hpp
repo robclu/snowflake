@@ -33,6 +33,9 @@ class SdlPlatform : public Platform<SdlPlatform> {
  public:
   //==--- [construction] ---------------------------------------------------==//
 
+  /// Constructor to create a default initialized platform.
+  SdlPlatform();
+
   /// Constructor to initialize the platform with a \p title, and a \p width and
   /// \p height.
   SdlPlatform(const std::string& title, uint32_t width, uint32_t height);
@@ -70,13 +73,29 @@ class SdlPlatform : public Platform<SdlPlatform> {
   /// Gets the vulkan instance extensions for the platform.
   auto get_instance_extensions() const -> ext_vector_t;
 
-  /// Initializes the platform with a \p title.
-  /// \param title The title to initialize the platform with.
-  auto initialize(const std::string& title) -> void;
+  /// Returns true if the platform is still alive.
+  auto is_alive_impl() const -> bool;
+
+  /// Sets the title of the platform.
+  /// \param title The title for the platform.
+  auto set_title_impl(const std::string& title) -> void;
+
+  /// Resizes the platform surface.
+  auto resize_impl() -> void;
+
+  /// Polls the input.
+  /// \todo change this so that the events go somewhere.
+  auto poll_input_impl() -> void;
+
+ private:
+  bool _is_alive = true; //!< If the platform is alive.
 
   /// Initializes the vulkan loader, returning true if the loading was
   /// successul.
   ripple_no_discard auto initialize_vulkan_loader() const -> bool;
+
+  /// Initializes the platform.
+  auto initialize() -> void;
 };
 
 } // namespace ripple::glow::backend

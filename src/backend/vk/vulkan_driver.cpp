@@ -24,6 +24,14 @@
 
 namespace ripple::glow::backend {
 
+//==--- [interface] --------------------------------------------------------==//
+
+auto VulkanDriver::create(const VulkanDriver::platform_t& platform)
+  -> VulkanDriver* {
+  static VulkanDriver driver(platform);
+  return &driver;
+}
+
 //==--- [con/destruction] --------------------------------------------------==//
 
 VulkanDriver::VulkanDriver(const VulkanDriver::platform_t& platform) {
@@ -37,6 +45,7 @@ VulkanDriver::VulkanDriver(const VulkanDriver::platform_t& platform) {
     logger_t::logger().flush();
     assert(false && "VulkanDriver could not create VulkanContext");
   }
+
   log_info("Created driver vulkan context.");
 }
 

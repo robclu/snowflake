@@ -29,8 +29,6 @@ namespace ripple::glow {
 /// mode.
 class Window {
   // clang-format off
-  /// Defines the type of the platform.
-  using platform_t   = backend::platform_type_t;
   /// Defines the type of the driver pointer.
   using engine_ptr_t = Engine*;
   // clang-format on
@@ -72,12 +70,14 @@ class Window {
   auto poll_input() -> void;
 
  private:
-  platform_t   _platform;        //!< The platform for the window.
-  engine_ptr_t _engine;          //!< Pointer to the engine.
-  bool         _is_alive = true; //!< If the window is alive.
+  engine_ptr_t _engine; //!< Pointer to the engine.
 
-  /// Initializes the window and the rendering context for the window.
-  auto init() -> bool;
+  /// Initializes the window by creating the engine and the initializing the
+  /// engine platform.  Returns true if everything was created successfully.
+  /// \param title  The title of the window.
+  /// \param width  The (width) of the window  - pixels in the x dimension.
+  /// \param height The (height) of the window - pixels in the y dimension.
+  auto init(const std::string& title, uint32_t width, uint32_t height) -> bool;
 };
 
 } // namespace ripple::glow

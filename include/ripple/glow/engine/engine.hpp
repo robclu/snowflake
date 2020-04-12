@@ -26,15 +26,16 @@ namespace ripple::glow {
 /// holds a platform, and a backend driver.
 class Engine {
  public:
+  // clang-format off
   /// Defines the type of the platform.
   /// \todo Change this to be a reference counted type.
   using platform_t = backend::platform_type_t;
   /// Defines the type of the driver.
-  using driver_t = backend::VulkanDriver;
+  using driver_t   = backend::VulkanDriver;
+  // clang-format on
 
   //==--- [construction] ---------------------------------------------------==//
 
-  Engine()              = delete;
   Engine(const Engine&) = delete;
   Engine(Engine&&)      = delete;
   auto operator=(const Engine&) = delete;
@@ -44,19 +45,33 @@ class Engine {
 
   /// Creates the engine, returning a pointer to the newly created engine. If
   /// the engine could not be created, a nullptr is returned.
-  /// \param platform The platform to create the engine for.
-  static auto create(const platform_t& platform) -> Engine*;
+  static auto create() -> Engine*;
+
+  /// Returns a pointer to the platform.
+  auto platform() -> platform_t* {
+    return &_platform;
+  }
+
+  /// Returns a const pointer to the platform.
+  auto platform() const -> const platform_t* {
+    return &_platform;
+  }
+
+  /// Returns a pointer to the driver.
+  auto driver() -> driver_t* {
+    return _driver;
+  }
 
  private:
   //==--- [construction] ---------------------------------------------------==//
 
   /// Constructor to create the engine with the \p paltform.
-  /// \param platform The platform to create the engine with.
-  Engine(const platform_t& platform);
+  Engine();
 
   //==--- [members] --------------------------------------------------------==//
 
-  driver_t _driver; //!< The driver for engine.
+  platform_t _platform;         //!< The platform to run on.
+  driver_t*  _driver = nullptr; //!< The driver for engine.
 };
 
 } // namespace ripple::glow

@@ -13,19 +13,23 @@
 //
 //==------------------------------------------------------------------------==//
 
+#include <ripple/core/log/logger.hpp>
 #include <ripple/glow/engine/engine.hpp>
 
 namespace ripple::glow {
 
 //==--- [public static] ----------------------------------------------------==//
 
-auto Engine::create(const Engine::platform_t& platform) -> Engine* {
-  static Engine engine(platform);
+auto Engine::create() -> Engine* {
+  static Engine engine;
+
   return &engine;
 }
 
 //==--- [private] ----------------------------------------------------------==//
 
-Engine::Engine(const Engine::platform_t& platform) : _driver(platform) {}
+Engine::Engine() {
+  _driver = driver_t::create(_platform);
+}
 
 } // namespace ripple::glow

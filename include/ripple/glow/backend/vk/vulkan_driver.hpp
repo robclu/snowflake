@@ -38,20 +38,24 @@ class VulkanDriver {
 
   //==--- [construction] ---------------------------------------------------==//
 
-  /// Constructor to initialize the device.
-  /// \param platform The platform to create the driver for.
-  VulkanDriver(const platform_t& platform);
-
   /// Destructor to clean up the device resources.
   ~VulkanDriver();
 
   //==--- [interface] ------------------------------------------------------==//
+
+  /// Creates the vulkan driver from the platform.
+  /// \param platform The platform to create the driver with.
+  static auto create(const platform_t& platform) -> VulkanDriver*;
 
  private:
   VulkanContext _context;                         //!< Vulkan context.
   VkQueue       _graphics_queue = VK_NULL_HANDLE; //!< Graphics queue.
   VkQueue       _compute_queue  = VK_NULL_HANDLE; //!< Compute queue.
   VkQueue       _transfer_queue = VK_NULL_HANDLE; //!< Transfer queue.
+
+  /// Constructor to initialize the device.
+  /// \param platform The platform to create the driver for.
+  VulkanDriver(const platform_t& platform);
 };
 
 } // namespace ripple::glow::backend

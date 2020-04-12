@@ -21,6 +21,10 @@
 
 namespace ripple::glow::backend {
 
+//==--- [forward declarations] ---------------------------------------------==//
+
+class VulkanDriver;
+
 //==--- [vendor] -----------------------------------------------------------==//
 
 /// Defines the kinds of the vendors.
@@ -76,8 +80,6 @@ class VulkanContext {
 
   //==--- [interface] ------------------------------------------------------==//
 
-  /// Creates the context
-
   /// Creates the instance and the device, with \p ins_extensions for the
   /// instance, and \p dev_extensions for the device. This returns false if the
   /// initialization was not successful.
@@ -86,6 +88,16 @@ class VulkanContext {
     uint32_t     num_ins_extensions,
     const char** dev_extensions,
     uint32_t     num_dev_extesions) -> bool;
+
+  /// Returns the vulkan instance.
+  auto instance() const -> VkInstance {
+    return _instance;
+  }
+
+  /// Returns the vulkan physical device.
+  auto physical_device() const -> VkPhysicalDevice {
+    return _phy_dev;
+  }
 
  private:
   //==--- [constants] ------------------------------------------------------==//

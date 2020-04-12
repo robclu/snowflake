@@ -24,10 +24,15 @@ namespace ripple::glow::backend {
 
 //==--- [con/destruction] --------------------------------------------------==//
 
+SdlPlatform::SdlPlatform() {
+  initialize();
+}
+
 SdlPlatform::SdlPlatform(
   const std::string& title, uint32_t width, uint32_t height)
 : base_platform_t(width, height) {
-  initialize(title);
+  initialize();
+  set_title(title);
 }
 
 SdlPlatform::~SdlPlatform() {
@@ -47,6 +52,19 @@ auto SdlPlatform::create_vulkan_surface(
   }
 }
 
+auto SdlPlatform::is_alive_impl() const -> bool {
+  return _is_alive;
+
+  SDL_Event e;
+  while (SDL_PollEvent(&e)) {
+    switch (e.type) {
+      case SDL_QUIT: {
+        return false;
+      }
+    }
+  }
+  return true;
+}
 auto SdlPlatform::get_device_extensions() const -> ext_vector_t {
   return ext_vector_t{"VK_KHR_swapchain"};
 }
@@ -60,7 +78,45 @@ auto SdlPlatform::get_instance_extensions() const -> ext_vector_t {
   return instance_names;
 }
 
-auto SdlPlatform::initialize(const std::string& title) -> void {
+auto SdlPlatform::poll_input_impl() -> void {
+  // Todo : Add input polling ...
+  SDL_Event e;
+  while (SDL_PollEvent(&e)) {
+    switch (e.type) {
+      case SDL_QUIT: {
+        _is_alive = false;
+        break;
+      }
+      default: break;
+    }
+  }
+}
+
+auto SdlPlatform::resize_impl() -> void {
+  SDL_SetWindowSize(
+    _window, static_cast<int>(_width), static_cast<int>(_height));
+}
+
+auto SdlPlatform::set_title_impl(const std::string& title) -> void {
+  if (_window == nullptr) {
+    initialize();
+  }
+  SDL_SetWindowTitle(_window, title.c_str());
+}
+
+//==--- [initialization] ---------------------------------------------------==//
+
+static bool loader_initialized = false;
+
+auto SdlPlatform::initialize() -> void {
+  if (!loader_initialized && !SdlPlatform::initialize_vulkan_loader()) {
+    assert(false && "Failed to load the vulkan loader!");
+  }
+
+  if (_window) {
+    return;
+  }
+
   assert(SDL_Init(SDL_INIT_EVENTS) == 0);
 
   const int center_x = SDL_WINDOWPOS_CENTERED;
@@ -74,7 +130,7 @@ auto SdlPlatform::initialize(const std::string& title) -> void {
   }
 
   _window = SDL_CreateWindow(
-    title.c_str(),
+    "Default Initialized Window",
     center_x,
     center_y,
     static_cast<int>(this->_width),
@@ -94,6 +150,7 @@ auto SdlPlatform::initialize_vulkan_loader() const -> bool {
     log_error("Sdl platform failed to create Vulkan loader.");
     return false;
   }
+  loader_initialized = true;
   return true;
 }
 
