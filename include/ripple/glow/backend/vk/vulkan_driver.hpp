@@ -17,6 +17,7 @@
 #define RIPPLE_GLOW_BACKEND_VK_VULKAN_DRIVER_HPP
 
 #include "vulkan_context.hpp"
+#include "vulkan_surface_context.hpp"
 #include "../platform/platform.hpp"
 
 namespace ripple::glow::backend {
@@ -48,10 +49,12 @@ class VulkanDriver {
   static auto create(const platform_t& platform) -> VulkanDriver*;
 
  private:
-  VulkanContext _context;                         //!< Vulkan context.
-  VkQueue       _graphics_queue = VK_NULL_HANDLE; //!< Graphics queue.
-  VkQueue       _compute_queue  = VK_NULL_HANDLE; //!< Compute queue.
-  VkQueue       _transfer_queue = VK_NULL_HANDLE; //!< Transfer queue.
+  VulkanContext        _context;         //!< Vulkan context.
+  VulkanSurfaceContext _surface_context; //!< Surface related context.
+
+  VkQueue _graphics_queue = VK_NULL_HANDLE; //!< Graphics queue.
+  VkQueue _compute_queue  = VK_NULL_HANDLE; //!< Compute queue.
+  VkQueue _transfer_queue = VK_NULL_HANDLE; //!< Transfer queue.
 
   /// Constructor to initialize the device.
   /// \param platform The platform to create the driver for.

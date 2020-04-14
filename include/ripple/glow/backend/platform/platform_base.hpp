@@ -78,8 +78,8 @@ class Platform {
   /// Creates a surface for the platform, and returns it.
   /// \param instance The instance to create the surface for.
   /// \param device   The device to create the surface from.
-  auto
-  create_surface(VkInstance instance, VkPhysicalDevice device) -> VkSurfaceKHR {
+  auto create_surface(VkInstance instance, VkPhysicalDevice device) const
+    -> VkSurfaceKHR {
     return impl()->create_vulkan_surface(instance, device);
   }
 
@@ -112,15 +112,25 @@ class Platform {
     impl()->resize_impl();
   }
 
+  /// Returns the width of the platform surface.
+  auto width() const -> uint32_t {
+    return _width;
+  }
+
   /// Sets the width of the platform surface to \p width.
   /// \param width The width to set the platform to.
-  auto set_surface_width(uint32_t width) -> void {
+  auto set_width(uint32_t width) -> void {
     _width = width;
+  }
+
+  /// Returns the height of the platform surface.
+  auto height() const -> uint32_t {
+    return _height;
   }
 
   /// Sets the height of the platform surface  to \p height.
   /// \param height The height to set the platform to.
-  auto set_surface_height(uint32_t height) -> void {
+  auto set_height(uint32_t height) -> void {
     _height = height;
   }
 

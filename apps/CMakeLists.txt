@@ -52,6 +52,7 @@ list(
   APPEND SOURCES
   ${GLOW_SOURCE_DIR}/backend/vk/vulkan_context.cpp
   ${GLOW_SOURCE_DIR}/backend/vk/vulkan_driver.cpp
+  ${GLOW_SOURCE_DIR}/backend/vk/vulkan_surface_context.cpp
   ${GLOW_SOURCE_DIR}/engine/engine.cpp
   ${GLOW_SOURCE_DIR}/window/window.cpp
 )

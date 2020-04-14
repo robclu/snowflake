@@ -45,8 +45,18 @@ VulkanDriver::VulkanDriver(const VulkanDriver::platform_t& platform) {
     logger_t::logger().flush();
     assert(false && "VulkanDriver could not create VulkanContext");
   }
-
   log_info("Created driver vulkan context.");
+
+  _surface_context.surface() =
+    platform.create_surface(_context.instance(), _context.physical_device());
+
+  if (_surface_context.surface() == VK_NULL_HANDLE) {
+    assert(false && "Failed to create vulkan surface.");
+  }
+
+  if (!_surface_context.init(_context, platform.width(), platform.height())) {
+    assert(false && "Failed to create the surface context.");
+  }
 }
 
 VulkanDriver::~VulkanDriver() {}

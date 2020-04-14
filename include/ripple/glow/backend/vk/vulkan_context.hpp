@@ -99,6 +99,21 @@ class VulkanContext {
     return _phy_dev;
   }
 
+  /// Returns the logical device for the context.
+  auto device() const -> VkDevice {
+    return _device;
+  }
+
+  /// Returns a pointer to the device table for the instance.
+  auto device_table() const -> const VolkDeviceTable* {
+    return &_device_table;
+  }
+
+  /// Returns true if surface capabilities 2 are supported.
+  auto supports_surface_caps_2() const -> bool {
+    return _supports_surface_caps_2;
+  }
+
  private:
   //==--- [constants] ------------------------------------------------------==//
 

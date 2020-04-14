@@ -64,7 +64,7 @@ class SdlPlatform : public Platform<SdlPlatform> {
   /// Creates a surface for vulkan.
   /// \param instance The instance to create the surface for.
   /// \param device   The device to create the surface from.
-  auto create_vulkan_surface(VkInstance instance, VkPhysicalDevice device)
+  auto create_vulkan_surface(VkInstance instance, VkPhysicalDevice device) const
     -> VkSurfaceKHR;
 
   /// Gets the vulkan device extensions for the platform.

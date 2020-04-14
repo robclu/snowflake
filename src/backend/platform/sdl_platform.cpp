@@ -43,7 +43,7 @@ SdlPlatform::~SdlPlatform() {
 //==--- [interface] --------------------------------------------------------==//
 
 auto SdlPlatform::create_vulkan_surface(
-  VkInstance instance, VkPhysicalDevice device) -> VkSurfaceKHR {
+  VkInstance instance, VkPhysicalDevice device) const -> VkSurfaceKHR {
   VkSurfaceKHR surface;
   if (SDL_Vulkan_CreateSurface(_window, instance, &surface)) {
     return surface;

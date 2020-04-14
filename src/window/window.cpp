@@ -53,8 +53,6 @@ auto Window::init(const std::string& title, uint32_t width, uint32_t height)
     return false;
   }
 
-  platform->set_surface_width(width);
-  platform->set_surface_height(height);
   platform->set_title(title);
   platform->resize(width, height);
 

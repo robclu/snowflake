@@ -1,4 +1,4 @@
-//==--- glow/src/vk/context.cpp ---------------------------- -*- C++ -*- ---==//
+//==--- glow/src/backend/vk/vulkan_context.cpp ------------- -*- C++ -*- ---==//
 //
 //                            Ripple - Glow
 //
@@ -8,7 +8,7 @@
 //
 //==------------------------------------------------------------------------==//
 //
-/// \file  context.cpp
+/// \file  vulkan_context.cpp
 /// \brief This file defines the implemenation for the vulkan context.
 //
 //==------------------------------------------------------------------------==//
