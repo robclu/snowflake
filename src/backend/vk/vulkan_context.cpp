@@ -58,15 +58,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_messenger_cb(
     }
 
   #if 0
-	  case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-	  case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-		  if (message_ype == VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
-			  log_info("Vulkan validation: {}", p_callback_data->pMessage);
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: {
+      if (message_ype == VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
+        log_info("Vulkan validation: {}", p_callback_data->pMessage);
       } else {
-			  log_info("Vulkan other: {}", p_callback_data->pMessage);
+        log_info("Vulkan other: {}", p_callback_data->pMessage);
       }
-		  break;
-  }
+      break;
+    }
   #endif
     default: return VK_FALSE;
   }
