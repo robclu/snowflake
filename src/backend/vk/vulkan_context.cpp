@@ -57,7 +57,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_messenger_cb(
       break;
     }
 
-  // clang-format off
   #if 0
 	  case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
 	  case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
@@ -69,7 +68,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_messenger_cb(
 		  break;
   }
   #endif
-      // clang-format on
     default: return VK_FALSE;
   }
 
