@@ -20,7 +20,12 @@ namespace ripple::glow {
 
 //==--- [con/destruction] --------------------------------------------------==//
 
-Window::Window(const std::string& title, uint32_t width, uint32_t height) {
+Window::Window(
+  Window::engine_ptr_t engine,
+  const std::string&   title,
+  uint32_t             width,
+  uint32_t             height)
+: _engine(engine) {
   if (!init(title, width, height)) {
     log_error("Failed to initialize window.");
   }
@@ -40,10 +45,8 @@ auto Window::poll_input() -> void {
 
 auto Window::init(const std::string& title, uint32_t width, uint32_t height)
   -> bool {
-  _engine = Engine::create();
-
   if (_engine == nullptr) {
-    log_error("Failed to create the engine.");
+    log_error("Window requires a valid engine.");
     return false;
   }
 

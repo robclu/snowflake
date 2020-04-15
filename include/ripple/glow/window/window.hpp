@@ -28,38 +28,40 @@ namespace ripple::glow {
 /// be rendering to a swapchain which is not displayed, such as in _headless_
 /// mode.
 class Window {
-  // clang-format off
+ public:
   /// Defines the type of the driver pointer.
   using engine_ptr_t = Engine*;
-  // clang-format on
 
- public:
   //==--- [construction] ---------------------------------------------------==//
 
   /// Constructor for the window, which sets the \p title and the \p width and
   /// \p height as the dimensions of the window.
+  /// \param engine A pointer to the engine to run the window.
   /// \param title  The title of the window.
   /// \param width  The (width) of the window  - pixels in the x dimension.
   /// \param height The (height) of the window - pixels in the y dimension.
-  Window(const std::string& title, uint32_t width, uint32_t height);
-
-  // clang-format off
+  Window(
+    engine_ptr_t       engine,
+    const std::string& title,
+    uint32_t           width,
+    uint32_t           height);
 
   /// Defaulted destructor.
-  ~Window()             = default;
-  /// Deleted copy constructor.
+  ~Window() = default;
+  /// Move constructor.
+  Window(Window&&) = default;
+
+  //==--- [deleted] --------------------------------------------------------==//
+
+  /// Deleted copy constructor -- can't copy window.
   Window(const Window&) = delete;
-  /// Deleted move constructor.
-  Window(Window&&)      = delete;
+  /// Deleted copy assignment operator -- can't copy window.
+  auto operator=(const Window&) -> Window& = delete;
 
   //===--- [operator overloads] --------------------------------------------==//
 
-  /// Deleted copy assignment operator.
-  auto operator=(const Window&) -> Window& = delete;
-  /// Deleted move assignment operator.
-  auto operator=(Window&&) -> Window&      = delete;
-
-  // clang-format on
+  /// Move assignment operator.
+  auto operator=(Window &&) -> Window& = default;
 
   //==--- [interface] ------------------------------------------------------==//
 
