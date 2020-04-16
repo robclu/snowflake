@@ -50,6 +50,8 @@ endif(GLOW_HEADLESS_PLATFORM)
 
 list(
   APPEND SOURCES
+  ${GLOW_SOURCE_DIR}/backend/vk/frame_data.cpp
+  ${GLOW_SOURCE_DIR}/backend/vk/vulkan_command_pool.cpp
   ${GLOW_SOURCE_DIR}/backend/vk/vulkan_context.cpp
   ${GLOW_SOURCE_DIR}/backend/vk/vulkan_driver.cpp
   ${GLOW_SOURCE_DIR}/backend/vk/vulkan_surface_context.cpp

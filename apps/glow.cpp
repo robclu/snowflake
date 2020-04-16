@@ -11,7 +11,7 @@ auto run_application() -> void {
 
     // Do some event handling
 
-    // renderer->begin_frame()
+    engine->driver()->begin_frame(*(engine->platform()));
   }
 }
 

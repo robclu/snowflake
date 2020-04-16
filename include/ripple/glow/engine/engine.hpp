@@ -23,7 +23,7 @@
 namespace ripple::glow {
 
 /// The engine class provides the interface to all system components in glow. It
-/// holds a platform, and a backend driver.
+/// holds a platform, and a backend driver, and a renderer.
 class Engine {
  public:
   // clang-format off
@@ -36,16 +36,27 @@ class Engine {
 
   //==--- [construction] ---------------------------------------------------==//
 
-  Engine(const Engine&) = delete;
-  Engine(Engine&&)      = delete;
-  auto operator=(const Engine&) = delete;
-  auto operator=(Engine&&) = delete;
-
-  //==--- [interface] ------------------------------------------------------==//
-
   /// Creates the engine, returning a pointer to the newly created engine. If
   /// the engine could not be created, a nullptr is returned.
   static auto create() -> Engine*;
+
+  /// Destructor -- defaulted.
+  ~Engine() = default;
+
+  //==--- [deleted] --------------------------------------------------------==//
+
+  // clang-format off
+  /// Copy constructor -- deleted.
+  Engine(const Engine&)         = delete;
+  /// Move constructor -- deleted.
+  Engine(Engine&&)              = delete;
+  /// Copy assignment -- deleted.
+  auto operator=(const Engine&) = delete;
+  /// Move assignment -- deleted.
+  auto operator=(Engine&&)      = delete;
+  // clang-format on
+
+  //==--- [interface] ------------------------------------------------------==//
 
   /// Returns a pointer to the platform.
   auto platform() -> platform_t* {
@@ -65,7 +76,7 @@ class Engine {
  private:
   //==--- [construction] ---------------------------------------------------==//
 
-  /// Constructor to create the engine with the \p paltform.
+  /// Constructor to create the engine.
   Engine();
 
   //==--- [members] --------------------------------------------------------==//

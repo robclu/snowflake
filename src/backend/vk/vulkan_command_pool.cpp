@@ -116,7 +116,7 @@ auto VulkanCommandPool::request_command_buffer() -> VkCommandBuffer {
   info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
   info.commandBufferCount = 1;
 
-  _driver->context().device_table->vkAllocateCommandBuffers(
+  _driver->context().device_table()->vkAllocateCommandBuffers(
     _driver->context().device(), &info, &cmd_buffer);
   _index++;
   return cmd_buffer;

@@ -20,6 +20,9 @@
 
 namespace ripple::glow::backend {
 
+/// Froward declaration of the vulkan driver.
+class VulkanDriver;
+
 /// The type of present mode for the driver.
 enum class PresentMode : uint8_t {
   sync_to_vblank = 0, //!< Always sync to vert blanking (FIFO).
@@ -57,6 +60,26 @@ class VulkanSurfaceContext {
   /// Gets a reference to the swapchain.
   auto swapchain() -> VkSwapchainKHR& {
     return _swapchain;
+  }
+
+  /// Updates the current swap index.
+  auto update_swap_index() -> void {
+    _current_swap_idx = (_current_swap_idx + 1) % _swap_contexts.size();
+  }
+
+  /// Returns the current swap index.
+  auto current_swap_index() -> uint32_t& {
+    return _current_swap_idx;
+  }
+
+  /// Returns a reference to the image available semaphore.
+  auto image_available_semaphore() -> VkSemaphore& {
+    return _image_available;
+  }
+
+  /// Returns a reference to the done rendering semaphore.
+  auto done_rendering_semaphore() -> VkSemaphore& {
+    return _done_rendering;
   }
 
   /// Intializes the surface context with \p width and \p height.

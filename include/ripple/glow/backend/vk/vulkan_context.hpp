@@ -114,6 +114,21 @@ class VulkanContext {
     return _supports_surface_caps_2;
   }
 
+  //==--- [queue interface] ------------------------------------------------==//
+
+  /// Returns the index of the graphics queue family.
+  auto graphics_queue_family_index() const -> uint32_t {
+    return _graphics_queue_index;
+  }
+  /// Returns the index of the compute queue family.
+  auto compute_queue_family_index() const -> uint32_t {
+    return _compute_queue_index;
+  }
+  /// Returns the index of the transfer queue family.
+  auto transfer_queue_family_index() const -> uint32_t {
+    return _transfer_queue_index;
+  }
+
  private:
   //==--- [constants] ------------------------------------------------------==//
 
