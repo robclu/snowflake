@@ -41,17 +41,82 @@ format_to_aspect_mask(VkFormat format) -> VkImageAspectFlags {
 } // namespace
 
 auto VulkanSurfaceContext::init(
-  const VulkanContext& context, uint32_t width, uint32_t height) -> bool {
+  const VulkanContext& context,
+  PresentMode          present_mode,
+  uint32_t             width,
+  uint32_t             height) -> bool {
   if (_surface == VK_NULL_HANDLE) {
     log_error("Can't initialize surface context until surface is set.");
     return false;
   }
+
+  _present_mode = present_mode;
 
   if (!init_swapchain(context, width, height)) {
     return false;
   }
   return true;
 }
+
+auto VulkanSurfaceContext::present(const VulkanContext& context) -> bool {
+  if (_done_rendering == VK_NULL_HANDLE) {
+    return false;
+  }
+
+  VkResult         result = VK_SUCCESS;
+  VkPresentInfoKHR info   = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
+  info.waitSemaphoreCount = 1;
+  info.pWaitSemaphores    = &_done_rendering;
+  info.swapchainCount     = 1;
+  info.pSwapchains        = &_swapchain;
+  info.pImageIndices      = &_current_swap_idx;
+  info.pResults           = &result;
+
+  auto submit_result =
+    context.device_table()->vkQueuePresentKHR(context.graphics_queue(), &info);
+
+#ifdef ANDROID
+  // clang-format off
+  // Because of the pre-transform, Android might return sub-optimal, which we
+  // treat as a success.
+  if (submit_result == VK_SUBOPTIMAL_KHR) { submit_result = VK_SUCCESS; }
+  if (result        == VK_SUBOPTIMAL_KHR) { result        = VK_SUCCESS; }
+  // clang-format on
+#endif
+
+  if (submit_result != VK_SUCCESS || result != VK_SUCCESS) {
+    log_error("Failed to present to queue.");
+    return false;
+  }
+  return true;
+}
+
+auto VulkanSurfaceContext::reinit(
+  const VulkanContext& context,
+  PresentMode          present_mode,
+  uint32_t             width,
+  uint32_t             height) -> bool {
+  _present_mode = present_mode;
+  create_extent(context, width, height);
+  set_present_mode();
+  set_num_swapchain_images();
+
+  if (!create_swapchain(context)) {
+    return false;
+  }
+
+  if (!create_images(context)) {
+    return false;
+  }
+
+  if (!create_image_views(context)) {
+    return false;
+  }
+
+  return true;
+}
+
+//==--- [private] ----------------------------------------------------------==//
 
 auto VulkanSurfaceContext::create_surface_caps(const VulkanContext& context)
   -> bool {
@@ -253,41 +318,42 @@ auto VulkanSurfaceContext::create_extent(
 
 auto VulkanSurfaceContext::create_present_modes(const VulkanContext& context)
   -> bool {
-  _swapchain_present_mode = VK_PRESENT_MODE_FIFO_KHR;
-  if (_present_mode == PresentMode::sync_to_vblank) {
-    return true;
-  }
-
   auto num_present_modes = uint32_t{0};
-  auto present_modes     = std::vector<VkPresentModeKHR>();
   auto phy_dev           = context.physical_device();
   auto result            = vkGetPhysicalDeviceSurfacePresentModesKHR(
     phy_dev, _surface, &num_present_modes, nullptr);
-
   if (result != VK_SUCCESS) {
+    log_error("Failed to get number of present modes for surface context.");
     return false;
   }
-  present_modes.resize(num_present_modes);
+
+  _present_modes.resize(num_present_modes);
   result = vkGetPhysicalDeviceSurfacePresentModesKHR(
-    phy_dev, _surface, &num_present_modes, present_modes.data());
+    phy_dev, _surface, &num_present_modes, _present_modes.data());
   if (result != VK_SUCCESS) {
+    log_error("Failed to create present modes for surface context.");
     return false;
   }
+  return true;
+}
 
+auto VulkanSurfaceContext::set_present_mode() -> void {
+  _swapchain_present_mode = VK_PRESENT_MODE_FIFO_KHR;
+  if (_present_mode == PresentMode::sync_to_vblank) {
+    return;
+  }
+
+  // Try the others:
   const bool allow_mlbox = _present_mode != PresentMode::force_tear;
   const bool allow_immed = _present_mode != PresentMode::no_tear;
-
-  for (auto& present_mode : present_modes) {
+  for (auto& present_mode : _present_modes) {
     if (
       (allow_immed && present_mode == VK_PRESENT_MODE_IMMEDIATE_KHR) ||
       (allow_mlbox && present_mode == VK_PRESENT_MODE_MAILBOX_KHR)) {
       _swapchain_present_mode = present_mode;
-      return true;
+      return;
     }
   }
-
-  // None but we know that FIFO must be supported, so we use that in this case.
-  return true;
 }
 
 auto VulkanSurfaceContext::set_num_swapchain_images() -> void {
@@ -477,6 +543,7 @@ auto VulkanSurfaceContext::init_swapchain(
   if (!create_present_modes(context)) {
     return false;
   }
+  set_present_mode();
 
   set_num_swapchain_images();
 

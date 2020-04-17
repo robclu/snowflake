@@ -129,6 +129,19 @@ class VulkanContext {
     return _transfer_queue_index;
   }
 
+  /// Returns the graphics queue.
+  auto graphics_queue() const -> VkQueue {
+    return _graphics_queue;
+  }
+  /// Returns the compute queue.
+  auto compute_queue() const -> VkQueue {
+    return _compute_queue;
+  }
+  /// Returns the transfer queue.
+  auto transfer_queue() const -> VkQueue {
+    return _transfer_queue;
+  }
+
  private:
   //==--- [constants] ------------------------------------------------------==//
 

@@ -75,9 +75,20 @@ class VulkanDriver {
     return _num_threads;
   }
 
+  /// Sets the presentation mode for the driver.
+  auto set_present_mode(PresentMode present_mode) -> void {
+    _present_mode = present_mode;
+  }
+
   //==--- [frame interface] ------------------------------------------------==//
 
+  /// Returns a reference to the current frame.
+  auto current_frame() -> FrameData& {
+    return _frames[_frame_index];
+  }
+
   /// Begins the frame for the driver. This does the following:
+  ///
   /// - Gets the next image if it doesn't have one already.
   /// - Updates the driver frame context to the next frame.
   /// - Performes synchronization of the swapchain image
@@ -89,14 +100,23 @@ class VulkanDriver {
   /// This returns true if the image was acquired successfully, otherwise it
   /// returns false, and rendering isn't possible.
   ///
-  ///
-  /// \param platform The platform for the swapchain.
+  /// \param platform The platform to poll for input and to use to reinitialize
+  ///                 the swapchain if necessary.
   auto begin_frame(platform_t& platform) -> bool;
 
-  /// Returns a reference to the current frame.
-  auto current_frame() -> FrameData& {
-    return _frames[_frame_index];
-  }
+  /// Ends the frame for the driver. This does the following:
+  ///
+  /// - Presents the current swapchain image to the present queue if it was
+  ///   rendered to.
+  /// - Performs synchronization of the swapchain image
+  ///
+  /// This returns true if presentation of the image to the queue was
+  /// successfull, or if no rendering was done and there was no need to present
+  /// to the queue. It returns false otherwise.
+  ///
+  /// \param platform The platform to use to reintialize the swapchain is
+  ///                 necessary.
+  auto end_frame(platform_t& platform) -> bool;
 
  private:
   VulkanContext        _context;         //!< Vulkan context.
@@ -105,8 +125,12 @@ class VulkanDriver {
   uint16_t             _num_threads = 1; //!< The number of threads being used.
   uint8_t              _frame_index = 0; //!< Index of the frame.
 
+  // clang-format off
+  /// Present mode for the driver.
+  PresentMode _present_mode       = PresentMode::sync_to_vblank;
   // If the swapchain has been acquired.
-  bool _acquired_swapchain = false;
+  bool        _acquired_swapchain = false;
+  // clang-format on
 
   /// Constructor to initialize the device.
   /// \param platform The platform to create the driver for.

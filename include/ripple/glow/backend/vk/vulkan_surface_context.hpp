@@ -46,10 +46,14 @@ struct SwapContext {
 
 /// This stores surface related vulkan context, including the vulkan swapchain.
 class VulkanSurfaceContext {
+  // clang-format off
   /// Defines the type of the vector for the formats.
-  using formats_t = std::vector<VkSurfaceFormatKHR>;
+  using formats_t       = std::vector<VkSurfaceFormatKHR>;
   /// Defines the type of the vector for the swap context.
   using swap_contexts_t = std::vector<SwapContext>;
+  /// Defines a container of supported present modes.
+  using present_modes_t = std::vector<VkPresentModeKHR>;
+  // clang-format on
 
  public:
   /// Gets a reference to the surface.
@@ -72,6 +76,11 @@ class VulkanSurfaceContext {
     return _current_swap_idx;
   }
 
+  /// Returns the present mode for the surface context.
+  auto present_mode() const -> PresentMode {
+    return _present_mode;
+  }
+
   /// Returns a reference to the image available semaphore.
   auto image_available_semaphore() -> VkSemaphore& {
     return _image_available;
@@ -82,12 +91,40 @@ class VulkanSurfaceContext {
     return _done_rendering;
   }
 
-  /// Intializes the surface context with \p width and \p height.
-  /// \param context The vulkan context.
-  /// \param width   The width of the surface.
-  /// \param height  The height of the surface.
-  auto
-  init(const VulkanContext& context, uint32_t width, uint32_t height) -> bool;
+  /// Intializes the surface context with \p width and \p height and \p
+  /// present_mode. This should only be called when the context is created.
+  /// Calling `reinit()` will give better performance in subsequent calls.
+  /// \param context      The vulkan context.
+  /// \param present_mode The present mode for the surface context.
+  /// \param width        The width of the surface.
+  /// \param height       The height of the surface.
+  auto init(
+    const VulkanContext& context,
+    PresentMode          present_mode,
+    uint32_t             width,
+    uint32_t             height) -> bool;
+
+  /// Presents the current swapchain image to the graphics_queue from the
+  /// context. It returns true if the presentation was successfull, or false is
+  /// the `done_rendering_semaphore()` is not valid, or if there was an error
+  /// with the presentation.
+  /// \param context The context whose graphics queue will be presented to.
+  auto present(const VulkanContext& context) -> bool;
+
+  /// Re-initializes the surface context with \p width and \p height and \p
+  /// present_mode.
+  ///
+  /// This should only be called if `init()` has been called previously.
+  ///
+  /// \param context      The vulkan context.
+  /// \param present_mode The present mode for the surface context.
+  /// \param width        The width of the surface.
+  /// \param height       The height of the surface.
+  auto reinit(
+    const VulkanContext& context,
+    PresentMode          present_mode,
+    uint32_t             width,
+    uint32_t             height) -> bool;
 
  private:
   /// The surface for the
@@ -103,10 +140,15 @@ class VulkanSurfaceContext {
   formats_t                     _formats;           //!< All available format.
   swap_contexts_t               _swap_contexts;     //!< Swap contexts.
 
+  // clang-format off
+  /// All supported present modes, so we dont have to query them each time the
+  /// swapchain is recreated.
+  present_modes_t  _present_modes;
   /// The present mode for the surface.
-  PresentMode _present_mode = PresentMode::sync_to_vblank;
+  PresentMode      _present_mode = PresentMode::sync_to_vblank;
   /// The present mode for the swapchain.
   VkPresentModeKHR _swapchain_present_mode;
+  // clang-format on
 
   uint32_t _current_swap_idx  = 0;     //!< Current swap context index.
   uint32_t _num_images        = 0;     //!< Number of swapchain images.
@@ -166,7 +208,8 @@ class VulkanSurfaceContext {
   /// Returns the composite mode for the swapchain.
   auto get_composite_mode() const -> VkCompositeAlphaFlagBitsKHR;
 
-  /// Initializes the swapchain
+  /// Sets the present mode for the swapchain.
+  auto set_present_mode() -> void;
 
   /// Sets the transform properties for the surface.
   /// \param context The vulkan context.

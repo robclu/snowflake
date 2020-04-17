@@ -56,7 +56,8 @@ VulkanDriver::VulkanDriver(
     assert(false && "Failed to create vulkan surface.");
   }
 
-  if (!_surface_context.init(_context, platform.width(), platform.height())) {
+  if (!_surface_context.init(
+        _context, _present_mode, platform.width(), platform.height())) {
     assert(false && "Failed to create the surface context.");
   }
 
@@ -74,6 +75,26 @@ auto VulkanDriver::begin_frame(platform_t& platform) -> bool {
   // something like that, and we can't continue.
   if (!acquire_next_image(platform)) {
     return false;
+  }
+  return true;
+}
+
+auto VulkanDriver::end_frame(platform_t& platform) -> bool {
+  // TODO: Add call to reset_frame_data() when there is frame data which
+  // required resetting.
+  _acquired_swapchain = false;
+
+  if (!_surface_context.present(_context)) {
+    // Reset the swapchain ...
+    return false;
+  }
+
+  // Managed to present, check if the swapchain changed:
+  if (_present_mode != _surface_context.present_mode()) {
+    if (!_surface_context.reinit(
+          _context, _present_mode, platform.width(), platform.height())) {
+      log_error("Failed to reinitialize surface context during presentation.");
+    };
   }
   return true;
 }
@@ -117,7 +138,9 @@ auto VulkanDriver::acquire_next_image(platform_t& platform) -> bool {
                                  result == VK_ERROR_OUT_OF_DATE_KHR;
     if (swapchain_error) {
       // Need to recreate the swapchain ...
-      return true;
+      _surface_context.reinit(
+        _context, _present_mode, platform.width(), platform.height());
+      continue;
     }
     return false;
   } while (result != VK_SUCCESS);
