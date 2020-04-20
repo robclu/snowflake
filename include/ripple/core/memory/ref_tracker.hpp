@@ -23,6 +23,35 @@
 
 namespace ripple {
 
+//==--- [forward declarations & aliases] -----------------------------------==//
+
+/// Forward declaration of reference tracking interface.
+/// \tparam Impl The implementation of the interface.
+template <typename Impl>
+class RefTracker;
+
+/// Forward declaration of a single-threaded reference tracker.
+class SingleThreadedRefTracker;
+
+/// Forward declaration of a multi-threaded reference tracker.
+class MultiThreadedRefTracker;
+
+/// Defines the type of the default reference tracker. The tracker is multi
+/// threaded unless ripple is explicitly compiler for single threaded use.
+using default_ref_tracker_t =
+#if defined(RIPPLE_SINGLE_THREADED)
+  SingleThreadedRefTracker;
+#else
+  MultiThreadedRefTracker;
+#endif
+
+/// Returns true if the type T is an implementation of the RefCounter
+/// interface. \tparam T The type to check if is a reference counter.
+static constexpr bool is_ref_tracker_v =
+  std::is_base_of_v<RefTracker<std::decay_t<T> >, std::decay_t<T> >;
+
+//==--- [implementation] ---------------------------------------------------==//
+
 /// The RefTracker class defines an interface for reference counting, which can
 /// be specialized for different contexts, and which allows the type requiring
 /// tracking to clean up the resource as well.
@@ -74,13 +103,6 @@ class RefTracker {
     impl()->destroy_resource_impl(resource, std::forward<Deleter>(deleter));
   }
 };
-
-//==--- [aliases] ----------------------------------------------------------==//
-
-/// Returns true if the type T is an implementation of the RefCounter interface.
-/// \tparam T The type to check if is a reference counter.
-static constexpr bool is_ref_tracker_v =
-  std::is_base_of_v<RefTracker<std::decay_t<T>>, std::decay_t<T>>;
 
 //==--- [single-threaded implementation] -----------------------------------==//
 
@@ -157,12 +179,20 @@ class MultiThreadedRefTracker : public RefTracker<MultiThreadedRefTracker> {
   /// then the resource should be deleted by calling `destroy()`.
   auto release() -> bool {
     // Here we need to ensure that any access from another thread __happens
-    // before__ the deleting the object from __this__ thread, hence the
-    // __release__ memory ordering.
+    // before__ the deleting the object, though a call to `destroy` __if__ this
+    // returns true.
     //
-    // We could also use __acquire_release__ here on the fetch_sub, but then we
-    // have an unnecessary __acquire__ when the ref count is not zero, so we put
-    // the acquire in the barrier __only__ when we are deleting.
+    // To ensure this, no reads/or write can be reordered to be after the
+    // `fetch_sub` (i.e they happen before). Another thread might hold the last
+    // reference, and before deleting, the `fetch_sub` needs to happen on
+    // __this__ thread __before__ that thread deletes, which is done with
+    // `memory_order_release`.
+    //
+    // Note the delete needs a `memory_order_acquire` before it, to prevent the
+    // opposite case. We could use `memory_order_acq_release` here, but that
+    // wastes as aquire for each decrement, when it's only required before
+    // deleting. Hence, we require a call to `destroy` to correctly destroy the
+    // object.
     return _ref_count.fetch_sub(1, std::memory_order_release) == 1;
   }
 
@@ -185,6 +215,10 @@ class MultiThreadedRefTracker : public RefTracker<MultiThreadedRefTracker> {
   /// \tparam Deleter  The type of the deleter.
   template <typename T, typename Deleter>
   auto destroy_impl(T* resource, Deleter&& deleter) -> void {
+    // Here we need to ensure that no read or write is ordered before the
+    // `fetch_sub` in the `release` call. Otherwise another thread might could
+    // see a destroyed object before the reference count is zero. This is done
+    // with the barrier with `memory_order_acquire`.
     std::atmomic_thread_fence(std::memory_order_acquire);
     deleter(resource);
   }
