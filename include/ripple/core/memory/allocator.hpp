@@ -17,6 +17,7 @@
 #define RIPPLE_CORE_MEMORY_ALLOCATOR_HPP
 
 #include "aligned_heap_allocator.hpp"
+#include "pool_allocator.hpp"
 #include <mutex>
 
 namespace ripple {
@@ -28,6 +29,8 @@ struct VoidLock {
   /// Does nothing when `unlock()` is called.
   auto unlock() noexcept -> void {}
 };
+
+//==--- [forward declarations & aliases] -----------------------------------==//
 
 /// The Allocator type is a simple implementation which allows an allocator to
 /// be composed of other allocators, to create allocators with useful properties
@@ -47,6 +50,52 @@ template <
   typename PrimaryAllocator,
   typename FallbackAllocator = AlignedHeapAllocator,
   typename LockingPolicy     = VoidLock>
+class Allocator;
+
+// clang-format off
+/// Defines an object pool allocator for objects of type T, which is by default
+/// not thread safe.
+/// \tparam T The type of the objects to allocate from the pool.
+template <
+  typename T,
+  bool     ThreadSafe   = false,
+  typename FreelistType =
+    std::conditional_t<ThreadSafe, ThreadSafeFreelist, Freelist>>
+using ObjectPoolAllocator = Allocator<
+  PoolAllocator<
+    sizeof(T),
+    std::max(alignof(T), alignof(FreelistType)),
+    FreelistType
+  >
+>;
+// clang-format on
+
+/// Defines an object pool allocator for objects of type T, which is
+/// thread-safe.
+/// \tparam T The type of the objects to allocate from the pool.
+template <typename T>
+using ThreadSafeObjectPoolAllocator = ObjectPoolAllocator<T, true>;
+
+//==--- [implementation] ---------------------------------------------------==//
+
+/// The Allocator type is a simple implementation which allows an allocator to
+/// be composed of other allocators, to create allocators with useful
+/// properties for different contexts.
+///
+/// The allocator will always try to allocate from the primary allocator,
+/// unless the primary allocation fails, in which case it will allocate from
+/// the fallback allocator.
+///
+/// All allocation and free operations are locked, using the locking
+/// policy provided. The default locking policy is to not lock.
+///
+/// \tparam PrimaryAllocator  The type of the primary allocator.
+/// \tparam FallbackAllocator The type of the fallback allocator.
+/// \tparam LockingPolicy     The type of the locking policy.
+template <
+  typename PrimaryAllocator,
+  typename FallbackAllocator,
+  typename LockingPolicy>
 class Allocator {
  public:
   //==--- [aliases] --------------------------------------------------------==//
