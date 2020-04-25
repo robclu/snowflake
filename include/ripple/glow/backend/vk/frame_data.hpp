@@ -16,6 +16,7 @@
 #ifndef RIPPLE_GLOW_BACKEND_VK_FRAME_DATA_HPP
 #define RIPPLE_GLOW_BACKEND_VK_FRAME_DATA_HPP
 
+#include "vulkan_command_buffer.hpp"
 #include "vulkan_command_pool.hpp"
 
 namespace ripple::glow::backend {
@@ -25,13 +26,13 @@ namespace ripple::glow::backend {
 /// there are threads. For 4 threads, there would be 12 queues in total, because
 /// for each frame there would be a graphics, compute, and transfer queue.
 struct FrameCommandPools {
-  /// Defines the type of the container for the pool. There should be a pool per
-  /// thread, so the pools each have their own container.
-  using pool_container_t = std::vector<VulkanCommandPool>;
+  /// Defines the type of the container for the pool. There should be a
+  /// pool per thread, so the pools each have their own container.
+  using PoolContainer = std::vector<VulkanCommandPool>;
 
-  pool_container_t graphics; //!< Command pools for graphics.
-  pool_container_t compute;  //!< Command pools for compute.
-  pool_container_t transfer; //!< Command pools for transfer.
+  PoolContainer graphics; //!< Command pools for graphics.
+  PoolContainer compute;  //!< Command pools for compute.
+  PoolContainer transfer; //!< Command pools for transfer.
 
   //==--- [construction] ---------------------------------------------------==//
 
@@ -48,6 +49,20 @@ struct FrameCommandPools {
     uint32_t      compute_queue_family_index,
     uint32_t      transfer_queue_family_index);
 
+  //==--- [interface] ------------------------------------------------------==//
+
+  /// Returns a reference to the command pools for BufferKind command buffers.
+  template <CommandBufferKind BufferKind>
+  auto get_pools() -> PoolContainer& {
+    if constexpr (BufferKind == CommandBufferKind::graphics) {
+      return graphics;
+    } else if (BufferKind == CommandBufferKind::compute) {
+      return compute;
+    } else if (BufferKind == CommandBufferKind::transfer) {
+      return transfer;
+    }
+  }
+
   /// Resets each of the command pools.
   auto reset() -> void;
 };
@@ -56,6 +71,8 @@ struct FrameCommandPools {
 /// use Vulkan >= 1.2, which supports timeline semaphores, thus reducing the
 /// need for fences in the frame synchronisation.
 struct FrameSync {
+  using CommandBufferCounter = std::atomic_uint32_t;
+
   // clang-format off
   /// Semaphore for the graphics queue.
   VkSemaphore graphics_timeline_semaphore = VK_NULL_HANDLE;
@@ -68,11 +85,6 @@ struct FrameSync {
   uint64_t compute_timeline_fence  = 0; //!< Compute fence value.
   uint64_t transfer_timeline_fence = 0; //!< Transfer fence value.
   // clang-format on
-
-  //==--- [construction] ---------------------------------------------------==//
-
-  /// Default constructor which just uses the defaults.
-  FrameSync() = default;
 
   /// Returns true if all semaphores are valid.
   auto all_semaphores_valid() const -> bool {
@@ -104,6 +116,15 @@ struct FrameData {
 
   /// Resets all data for the frame data.
   auto reset() -> void;
+
+  /// Returns the command pool of the command buffer kind specified by
+  /// BufferKind, for the \p thread_index.
+  /// \param  thread_index The thread index of the pool to get.
+  /// \tparam BufferKind  The kind of the command buffers in the pool.
+  template <CommandBufferKind BufferKind>
+  auto get_command_pool(size_t thread_index = 0) -> VulkanCommandPool& {
+    return command_pools.get_pools<BufferKind>()[thread_index];
+  }
 
  private:
   VulkanDriver* _driver = nullptr; //!< A pointer to the driver.
