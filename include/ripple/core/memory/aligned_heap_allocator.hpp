@@ -42,7 +42,7 @@ class AlignedHeapAllocator {
   AlignedHeapAllocator(const Arena& arena) {}
 
   /// Move construcor -- defaulted.
-  AlignedHeapAllocator(AlignedHeapAllocator&&)                     = default;
+  AlignedHeapAllocator(AlignedHeapAllocator&&)                    = default;
   /// Move assignment -- defaulted.
   auto operator=(AlignedHeapAllocator&&) -> AlignedHeapAllocator& = default;
 
@@ -60,7 +60,7 @@ class AlignedHeapAllocator {
   /// \param size  The size of the memory to allocate.
   /// \param align The alignment of the allocation.
   auto alloc(size_t size, size_t alignment) noexcept -> void* {
-    return std::aligned_alloc(alignment, size);
+    return aligned_alloc(alignment, size);
   }
 
   /// Frees the memory pointed to by ptr.

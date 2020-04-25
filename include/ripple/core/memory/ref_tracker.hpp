@@ -38,7 +38,7 @@ class MultiThreadedRefTracker;
 
 /// Defines the type of the default reference tracker. The tracker is multi
 /// threaded unless ripple is explicitly compiler for single threaded use.
-using default_ref_tracker_t =
+using DefaultRefTracker =
 #if defined(RIPPLE_SINGLE_THREADED)
   SingleThreadedRefTracker;
 #else
@@ -46,9 +46,11 @@ using default_ref_tracker_t =
 #endif
 
 /// Returns true if the type T is an implementation of the RefCounter
-/// interface. \tparam T The type to check if is a reference counter.
+/// interface.
+/// \tparam T The type to check if is a reference counter.
+template <typename T>
 static constexpr bool is_ref_tracker_v =
-  std::is_base_of_v<RefTracker<std::decay_t<T> >, std::decay_t<T> >;
+  std::is_base_of_v<RefTracker<std::decay_t<T>>, std::decay_t<T>>;
 
 //==--- [implementation] ---------------------------------------------------==//
 
@@ -59,17 +61,14 @@ static constexpr bool is_ref_tracker_v =
 /// \tparam Impl The implementation of the interface.
 template <typename Impl>
 class RefTracker {
-  /// Defines the type of the implementation.
-  using impl_t = Impl;
-
   /// Returns a pointer to the implementation.
-  auto impl() -> impl_t* {
-    return static_cast<impl_t*>(this);
+  auto impl() -> Impl* {
+    return static_cast<Impl*>(this);
   }
 
   /// Returns a const pointer to the implementation.
-  auto impl() const -> const impl_t* {
-    return static_cast<const impl_t*>(this);
+  auto impl() const -> const Impl* {
+    return static_cast<const Impl*>(this);
   }
 
  public:
@@ -114,7 +113,7 @@ class RefTracker {
 class SingleThreadedRefTracker : public RefTracker<SingleThreadedRefTracker> {
  public:
   /// Defines the type of the counter.
-  using counter_t = size_t;
+  using Counter = size_t;
 
   /// Adds a reference to the count.
   auto add_reference_impl() -> void {
@@ -146,7 +145,7 @@ class SingleThreadedRefTracker : public RefTracker<SingleThreadedRefTracker> {
   }
 
  private:
-  counter_t _ref_count = 1; //!< The reference count.
+  Counter _ref_count = 1; //!< The reference count.
 };
 
 //==---[multi-threaded implementation] -------------------------------------==//
@@ -159,10 +158,10 @@ class SingleThreadedRefTracker : public RefTracker<SingleThreadedRefTracker> {
 class MultiThreadedRefTracker : public RefTracker<MultiThreadedRefTracker> {
  public:
   /// Defines the type of the counter.
-  using counter_t = std::atomic_size_t;
+  using Counter = std::atomic_size_t;
 
   /// Constructor to initialize the reference count.
-  MultiThreadedRefTracker {
+  MultiThreadedRefTracker() {
     _ref_count.store(1, std::memory_order_relaxed);
   }
 
@@ -214,17 +213,17 @@ class MultiThreadedRefTracker : public RefTracker<MultiThreadedRefTracker> {
   /// \tparam T        The type of the resource.
   /// \tparam Deleter  The type of the deleter.
   template <typename T, typename Deleter>
-  auto destroy_impl(T* resource, Deleter&& deleter) -> void {
+  auto destroy_resource_impl(T* resource, Deleter&& deleter) -> void {
     // Here we need to ensure that no read or write is ordered before the
     // `fetch_sub` in the `release` call. Otherwise another thread might could
     // see a destroyed object before the reference count is zero. This is done
     // with the barrier with `memory_order_acquire`.
-    std::atmomic_thread_fence(std::memory_order_acquire);
+    std::atomic_thread_fence(std::memory_order_acquire);
     deleter(resource);
   }
 
  private:
-  counter_t _ref_count; //!< The reference count.
+  Counter _ref_count; //!< The reference count.
 };
 
 } // namespace ripple

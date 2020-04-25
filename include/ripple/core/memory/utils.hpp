@@ -16,7 +16,7 @@
 #ifndef RIPPLE_CORE_MEMORY_UTILS_HPP
 #define RIPPLE_CORE_MEMORY_UTILS_HPP
 
-#include <assert>
+#include <cassert>
 #include <cstdlib>
 
 namespace ripple::memory {
@@ -28,7 +28,7 @@ namespace ripple::memory {
 ///
 /// \param ptr    The pointer to offset.
 /// \param amount The amount to offset ptr by.
-static inline auto offset(void* ptr, uint32_t amount) noexcept -> void* {
+static inline auto offset(const void* ptr, uint32_t amount) noexcept -> void* {
   return reinterpret_cast<void*>(uintptr_t(ptr) + amount);
 }
 
@@ -36,7 +36,7 @@ static inline auto offset(void* ptr, uint32_t amount) noexcept -> void* {
 /// runtime if the \p alignemnt is not a power of two.
 /// \param ptr       The pointer to align.
 /// \param alignment The alignment to ensure.
-static inline auto align(void* ptr, size_t alignment) noexcept -> void* {
+static inline auto align(const void* ptr, size_t alignment) noexcept -> void* {
   assert(
     !(alignment & (alignment - 1)) &&
     "Alignment must be a power of two for linear allocation!");

@@ -36,7 +36,7 @@ class IntrusivePtr;
 template <
   typename T,
   typename Deleter          = std::default_delete<T>,
-  typename ReferenceTracker = default_ref_tracker_t>
+  typename ReferenceTracker = DefaultRefTracker>
 class IntrusivePtrEnabled;
 
 /// Alias for explicit single threaded intrusive pointer enable.
@@ -52,12 +52,6 @@ using SingleThreadedIntrusivePtrEnabled =
 template <typename T, typename Deleter = std::default_delete<T>>
 using MultiThreadedIntrusivePtrEnabled =
   IntrusivePtrEnabled<T, Deleter, MultiThreadedRefTracker>;
-
-/// Returns true if the type T is intrusive pointer enabled.
-/// \tparam T The type to check if is intrusive pointer enabled.
-template <typename T>
-static constexpr bool is_intrusive_ptr_enabled_t =
-  std::is_base_of_v<IntrusivePtrEnabled<std::decay_t<T>>, std::decay_t<T>>;
 
 /// Creates an intrusive pointer of type `IntrusivePtr<T>`, using the \p args to
 /// construct the type T.
@@ -77,20 +71,20 @@ auto make_intrusive_ptr(Args&&... args) -> IntrusivePtr<T>;
 template <typename T, typename Deleter, typename ReferenceTracker>
 class IntrusivePtrEnabled {
   /// Defines the type of this class.
-  using self_t = IntrusivePtrEnabled;
+  using Self = IntrusivePtrEnabled;
 
  public:
   //==--- [aliases] --------------------------------------------------------==//
 
   // clang-format off
-  /// Defines the type of the intrusive pointer.
-  using intrusive_ptr_t = IntrusivePtr<T>;
   /// Defines the type of the base which requires the functionality.
-  using enabled_type_t  = T;
-  /// Defines the type of the deleter for the base.
-  using deleter_t       = Deleter;
-  /// Defines the type of the reference tracker.
-  using ref_tracker_t   = ReferenceTracker;
+  using EnabledType      = T;
+  /// Defines the type of the intrusive pointer.
+  using IntrusivePointer = IntrusivePtr<EnabledType>;
+  /// Defines the type of the deleter.
+  using DeleterType      = Deleter;
+  /// Defines thee type of the reference tracker.
+  using RefTracker       = ReferenceTracker;
   // clang-format on
 
   //==--- [construction] ---------------------------------------------------==//
@@ -99,7 +93,7 @@ class IntrusivePtrEnabled {
   /// tracker implements the RefTracker interface.
   IntrusivePtrEnabled() {
     static_assert(
-      is_ref_tracker_v<ref_tracker_t>,
+      is_ref_tracker_v<RefTracker>,
       "Reference tracker for intrusive ptr enabled type must implement the "
       "RefTracker interface.");
   }
@@ -116,13 +110,13 @@ class IntrusivePtrEnabled {
   /// one. However, in a multi-threaded context, this will result in two atomic
   /// operations, when we can just move the reference tracker and have none.
   /// \param other The other type to move.
-  auto operator=(IntrusivePtrEnabled&& other) noexcept -> self_t& = default;
+  auto operator=(IntrusivePtrEnabled&& other) noexcept -> Self& = default;
 
   //==--- [deleted] --------------------------------------------------------==//
 
   // clang-format off
   /// Copy constructor -- deleted.
-  IntrusivePtrEnabled(const IntrusivePtrEnable&)     = delete;
+  IntrusivePtrEnabled(const IntrusivePtrEnabled&)    = delete;
   /// Copy assignment operator -- deleted.
   auto operator=(const IntrusivePtrEnabled&) -> void = delete;
   // clang-format on
@@ -133,22 +127,23 @@ class IntrusivePtrEnabled {
   /// the reference count gets to zero.
   void release_reference() {
     if (_ref_tracker.release()) {
-      _ref_tracker.destroy(staic_cast<enabled_type_t*>(this), deleter_t());
+      _ref_tracker.destroy_resource(
+        static_cast<EnabledType*>(this), DeleterType());
     }
   }
 
   /// Adds a reference to the tracked reference count.
   void add_reference() {
-    _ref_tracker.add_ref();
+    _ref_tracker.add_reference();
   }
 
  protected:
   /// Creates a new intrusive pointer from the pointed to object, incrementing
   /// the reference count.
-  auto reference_from_this() -> intrusive_ptr_t;
+  auto reference_from_this() -> IntrusivePointer;
 
  private:
-  ref_tracker_t _ref_tracker; //!< The reference tracker.
+  RefTracker _ref_tracker; //!< The reference tracker.
 };
 
 //==--- [intrusive pointer] ------------------------------------------------==//
@@ -179,17 +174,17 @@ class IntrusivePtr {
  public:
   //==--- [aliases] --------------------------------------------------------==//
 
-  using self_t      = IntrusivePtr; //!< The type of this class.
-  using ptr_t       = T*;           //!< Pointer type.
-  using ref_t       = T&;           //!< Reference type.
-  using const_ptr_t = const T*;     //!< Const pointer type.
-  using const_ref_t = const T&;     //!< Const reference type.
+  using Self     = IntrusivePtr; //!< The type of this class.
+  using Ptr      = T*;           //!< Pointer type.
+  using Ref      = T&;           //!< Reference type.
+  using ConstPtr = const T*;     //!< Const pointer type.
+  using ConstRef = const T&;     //!< Const reference type.
 
   /// Defines the type of intrusive enabled base for the type T.
-  using intrusive_enabled_base_t = IntrusivePtrEnabled<
-    typename T::enabled_type_t,
-    typename T::deleter_t,
-    typename T::ref_tracker_t>;
+  using IntrusiveEnabledBase = IntrusivePtrEnabled<
+    typename T::EnabledType,
+    typename T::DeleterType,
+    typename T::RefTracker>;
 
   //==--- [construction] ---------------------------------------------------==//
 
@@ -198,16 +193,16 @@ class IntrusivePtr {
 
   /// Constructor which takes a pointer \p ptr.
   /// \param data A pointer to the data.
-  explicit IntrusivePtr(ptr_t data) : _data(data) {}
+  explicit IntrusivePtr(Ptr data) : _data(data) {}
 
   /// Copy constructor to create the intrusive pointer from \p other.
-  IntrusivePtr(const self_t& other) {
+  IntrusivePtr(const Self& other) {
     *this = other;
   }
 
   /// Move the \p other intrusive pointer into this one.
   /// \param other The other intrusive pointer to move into this one.
-  IntrusivePtr(self_t&& other) noexcept {
+  IntrusivePtr(Self&& other) noexcept {
     *this = std::move(other);
   }
 
@@ -236,7 +231,7 @@ class IntrusivePtr {
 
   /// Destructor to clean up the pointer.
   ~IntrusivePtr() {
-    reset()
+    reset();
   }
 
   //==--- [operator overloads] ---------------------------------------------==//
@@ -244,7 +239,7 @@ class IntrusivePtr {
   /// Copy assignment operator to set the intrusive pointer from the \p other
   /// intrusive pointer.
   /// \param other The other pointer to set this one from.
-  auto& operator=(const selt_f& other) -> self_t& {
+  auto operator=(const Self& other) -> Self& {
     if (this != &other) {
       // Reset incase this still points to something valid:
       reset();
@@ -260,7 +255,7 @@ class IntrusivePtr {
   /// Move assignment operator to move the \p other intrusive pointer into
   /// this one.
   /// \param other The other pointer to move into this one.
-  auto operator=(self_t&& other) noexcept -> self_t& {
+  auto operator=(Self&& other) noexcept -> Self& {
     if (this != &other) {
       reset();
       _data       = other._data;
@@ -276,14 +271,14 @@ class IntrusivePtr {
   /// \param  other The other pointer to set this one from.
   /// \tparam U     The type of the other pointer.
   template <typename U>
-  auto operator=(const IntrusivePtr<U>& other) -> self_t& {
+  auto operator=(const IntrusivePtr<U>& other) -> Self& {
     static_assert(
       std::is_base_of_v<T, U> || std::is_convertible_v<U, T>,
       "Types of pointed to data for the intrusive pointer are not compatible.");
 
     // Reset incase this class points to valid data:
     reset();
-    _data = static_cast<ptr_t>(other._data);
+    _data = static_cast<Ptr>(other._data);
 
     if (_data) {
       as_intrusive_enabled()->add_reference();
@@ -296,13 +291,13 @@ class IntrusivePtr {
   /// \param  other The other pointer to set this one from.
   /// \tparam U     The type of the other pointer.
   template <typename U>
-  auto operator=(IntrusivePtr<U>&& other) noexcept -> self_t& {
+  auto operator=(IntrusivePtr<U>&& other) noexcept -> Self& {
     static_assert(
       std::is_base_of_v<T, U> || std::is_convertible_v<U, T>,
       "Types of pointed to data for the intrusive pointer are not compatible.");
 
     reset();
-    _data       = static_cast<ptr_t>(other._data);
+    _data       = static_cast<Ptr>(other._data);
     other._data = nullptr;
     return *this;
   }
@@ -310,30 +305,30 @@ class IntrusivePtr {
   //==--- [access] ---------------------------------------------------------==//
 
   /// Returns a reference to the data.
-  auto operator*() -> ref_t {
+  auto operator*() -> Ref {
     return *_data;
   }
   /// Returns a const reference to the data.
-  auto operator*() const -> const_ref_t {
+  auto operator*() const -> ConstRef {
     return *_data;
   }
 
   /// Returns a pointer to the data.
-  auto operator-> () -> ptr_t {
+  auto operator->() -> Ptr {
     return _data;
   }
   /// Returns a const pointer to the data.
-  auto operator-> () const -> const_ptr_t {
+  auto operator->() const -> ConstPtr {
     return _data;
   }
 
   /// Returns a pointer to the data.
-  auto get() -> ptr_t {
+  auto get() -> Ptr {
     return _data;
   }
 
   /// Returns a const pointer to the data.
-  auto get() const -> const_ptr_t {
+  auto get() const -> ConstPtr {
     return _data;
   }
 
@@ -348,7 +343,7 @@ class IntrusivePtr {
   /// to this data.
   /// \param other The other pointer to compare with.
   auto operator==(const IntrusivePtr& other) const -> bool {
-    return _data == _other.data;
+    return _data == other.data;
   }
   /// Returns true if the pointer to \p other's data is not the same as the
   /// pointer to this data.
@@ -363,21 +358,21 @@ class IntrusivePtr {
   /// pointer to the data.
   auto reset() -> void {
     if (_data) {
-      as_instrusive_enabled()->release_reference();
+      as_intrusive_enabled()->release_reference();
       _data = nullptr;
     }
   }
 
  private:
-  _ptr_t _data = nullptr; //!< Pointer to the data.
+  Ptr _data = nullptr; //!< Pointer to the data.
 
   /// Returns a pointer to the upcasted intrusive pointer enabled base class.
-  auto as_intrusive_enabled() -> intrusive_enabled_base_t* {
+  auto as_intrusive_enabled() -> IntrusiveEnabledBase* {
     static_assert(
-      is_intrusive_enabled_v<T>,
+      std::is_convertible_v<T*, IntrusiveEnabledBase*>,
       "IntrusivePtr requires type T to implement the IntrusivePtrEnabled "
       "interface.");
-    return static_cast<intrusive_enabled_base_t*>(_data);
+    return static_cast<IntrusiveEnabledBase*>(_data);
   }
 };
 

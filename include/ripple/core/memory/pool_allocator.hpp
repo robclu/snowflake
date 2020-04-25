@@ -39,8 +39,11 @@ class Freelist {
   /// \param element_size The size of the elements in the freelist.
   /// \param alignment    The alignment of the elements.
   Freelist(
-    void* start, void* end, size_t element_size, size_t alignment) noexcept
-  : _head(initialize(start, end)) {}
+    const void* start,
+    const void* end,
+    size_t      element_size,
+    size_t      alignment) noexcept
+  : _head(initialize(start, end, element_size, alignment)) {}
 
   // clang-format off
   /// Move constructor to move \p other to this freelist.
@@ -74,7 +77,7 @@ class Freelist {
       return;
     }
 
-    Node* const pushed_head = static_cast<Node*>(p);
+    Node* const pushed_head = static_cast<Node*>(ptr);
     pushed_head->next       = _head;
     _head                   = pushed_head;
   }
@@ -87,7 +90,14 @@ class Freelist {
 
   Node* _head = nullptr; //!< Pointer to the head of the list.
 
-  static auto initialize(void* start, void* end) -> Node* {
+  /// Intializes the free list.
+  /// \param start        The start of the freelist arena.
+  /// \param end          The end of the freelist arena.
+  /// \param element_size The size of the elements in the freelist.
+  /// \param alignment    The alignment of the elements.
+  static auto initialize(
+    const void* start, const void* end, size_t element_size, size_t alignment)
+    -> Node* {
     using namespace memory;
     // Create the first and second elements:
     void* const first  = align(start, alignment);
@@ -107,7 +117,7 @@ class Freelist {
       current       = next;
     }
     assert(
-      offset(current, size) <= end,
+      offset(current, size) <= end &&
       "Freelist initialization overflows provided arena!");
 
     current->next = nullptr;
@@ -128,7 +138,7 @@ class Freelist {
 /// a fallback.
 class ThreadSafeFreelist {
   /// Defines the type of this freelist.
-  using self_t = ThreadSafeFreelist;
+  using Self = ThreadSafeFreelist;
 
   /// The next pointer for the node is atomic because the thread sanitizer
   /// says that there is a data race for the following situation:
@@ -189,12 +199,8 @@ class ThreadSafeFreelist {
     uint32_t tag;    //!< Tag to ensure atomic operations are correct.
   };
 
-  // clang-format off
-  /// Defines the type of the head pointer.
-  using head_ptr_t        = HeadPtr;
   /// Defines the type of an atomic head pointer.
-  using atomic_head_ptr_t = std::atomic<head_ptr_t>;
-  // clang-format on
+  using AtomicHeadPtr = std::atomic<HeadPtr>;
 
  public:
   //==--- [construction] ---------------------------------------------------==//
@@ -209,7 +215,10 @@ class ThreadSafeFreelist {
   /// \param element_size The size of the elements in the freelist.
   /// \param alignment    The alignment of the elements.
   ThreadSafeFreelist(
-    void* start, void* end, size_t element_size, size_t aligement) noexcept {
+    const void* start,
+    const void* end,
+    size_t      element_size,
+    size_t      alignment) noexcept {
     using namespace memory;
     assert(_head.is_lock_free());
 
@@ -231,7 +240,7 @@ class ThreadSafeFreelist {
     // Link the list:
     Node* current = head;
     for (int i = 1; i < elements; ++i) {
-      Node* next    = memory::offset(current, size);
+      Node* next    = static_cast<Node*>(memory::offset(current, size));
       current->next = next;
       current       = next;
     }
@@ -243,23 +252,38 @@ class ThreadSafeFreelist {
 
     // Set the head pointer as the offset from the storage to the aligned head
     // element, and set the initial tag to zero.
-    _head.store({int32_t{head - _storage}, 0});
+    _head.store({static_cast<int32_t>(head - _storage), 0});
   }
 
-  // clang-format off
   /// Move constructor to move \p other to this freelist.
   /// \param other The other freelist to move.
-  ThreadSafeFreelist(self_t&& other) noexcept        = default;
+  ThreadSafeFreelist(Self&& other) noexcept
+  : _head(other._head.load(std::memory_order_relaxed)),
+    _storage(std::move(other._storage)) {
+    other._head.store({-1, 0}, std::memory_order_relaxed);
+    other._storage = nullptr;
+  }
+
   /// Move assignment to move \p other to this freelist.
   /// \param other The other freelist to move.
-  auto operator=(self_t&& other) noexcept -> self_t& = default;
+  auto operator=(Self&& other) noexcept -> Self& {
+    if (this != &other) {
+      _head.store(
+        other._head.load(std::memory_order_relaxed), std::memory_order_relaxed);
+      _storage = std::move(other._storage);
+      other._head.store({-1, 0}, std::memory_order_relaxed);
+      other._storage = nullptr;
+    }
+    return *this;
+  }
 
   //==--- [deleted] --------------------------------------------------------==//
 
+  //clang-format off
   /// Copy constructor -- deleted since the freelist can't be copied.
-  ThreadSafeFreelist(const selt_f&) = delete;
+  ThreadSafeFreelist(const Self&) = delete;
   /// Copy assignment -- deleted since the freelist can't be copied.
-  auto operator=(const self_t&)     = delete;
+  auto operator=(const Self&) = delete;
   // clang-format on
 
   //==--- [interface] ------------------------------------------------------==//
@@ -273,7 +297,7 @@ class ThreadSafeFreelist {
     // succeed first, and well as with other pushing threads which may push
     // before we pop, in which case we want to try and pop the newly pushed
     // head.
-    head_ptr_t current_head = _head.load(std::memory_order_acquire);
+    HeadPtr current_head = _head.load(std::memory_order_acquire);
 
     while (current_head.offset >= 0) {
       // If another thread tries to pop, and does it faster than here, then this
@@ -290,7 +314,7 @@ class ThreadSafeFreelist {
       // pop, so we set the offset to -1 so that on success, if _head is
       // replaced with new_head, then other threads will not execute this loop
       // and just return a nullptr.
-      const head_ptr_t new_head{
+      const HeadPtr new_head{
         next ? int32_t(next - storage) : -1, current_head.tag + 1};
 
       // If another thread was trying to pop, and got here just before us, then
@@ -334,11 +358,12 @@ class ThreadSafeFreelist {
     // Based on the above, we must have a valid pointer, but for debuf, this is
     // enabled incase something went horribly wrong.
     assert(!p || p >= storage);
-#endif NDEBUG
+#endif
     return p;
   }
 
   /// Pushes the \ptr onto the front of the free list.
+  /// \param ptr The pointer to push onto the front.
   auto push_front(void* ptr) noexcept -> void {
     Node* const storage = _storage;
     assert(ptr && ptr >= storage);
@@ -348,8 +373,8 @@ class ThreadSafeFreelist {
     // threads which are either trying to push or to pop. If that happens, the
     // compare exchange will fail and we will just try with the newly updated
     // head.
-    head_ptr_t current_head = _head.load(std::memory_order_relaxed);
-    head_ptr_t new_head     = {int32_t(node - storage), currentHead.tag + 1};
+    HeadPtr current_head = _head.load(std::memory_order_relaxed);
+    HeadPtr new_head     = {int32_t(node - storage), current_head.tag + 1};
 
     // Here we use memory_order_release in the success case, so that other
     // threads can synchronize with the updated head, but we don't care about
@@ -371,18 +396,9 @@ class ThreadSafeFreelist {
   }
 
  private:
-  // This struct is using a 32-bit offset into the arena rather than
-  // a direct pointer, because together with the 32-bit tag, it needs to
-  // fit into 8 bytes. If it was any larger, it would not be possible to
-  // access it atomically.
-  struct alignas(8) HeadPtr {
-    int32_t  offset; //!< Offset into the arena, rather than pointer.
-    uint32_t tag;
-  };
-
-  atomic_head_ptr_t _head{};            //!< Head pointer (index).
-  Node*             _storage = nullptr; //!< Storage.
-};
+  AtomicHeadPtr _head{};            //!< Head pointer (index).
+  Node*         _storage = nullptr; //!< Storage.
+};                                  // namespace ripple
 
 //==--- [pool allocator] ---------------------------------------------------==//
 
@@ -403,12 +419,12 @@ class PoolAllocator {
  private:
   // clang-format off
   /// Defines the size of the pool elements.
-  static constexpr size_t element_size = ElementSize;
+  static constexpr size_t element_size_v = ElementSize;
   /// Defines the alignment of the allocations.
-  static constexpr size_t alignment    = Alignment;
+  static constexpr size_t alignment_v    = Alignment;
 
   /// Defines the type of the freelist.
-  using freelist_t = FreelistImpl;
+  using FreeList = FreelistImpl;
   //clang-format on
 
  public:
@@ -425,8 +441,10 @@ class PoolAllocator {
   /// pointers to the memory arena for the pool.
   /// \param start A pointer to the start of the arena for the pool.
   /// \param end   A pointer to the end of the arena for the pool.
-  PoolAllocator(void* begin, void* end) noexcept
-  : _freelist(begin, end, element_size, alignment) {}
+  PoolAllocator(const void* begin, const void* end) noexcept
+  : _begin(begin),
+    _end(end),
+    _freelist(begin, end, element_size_v, alignment_v) {}
 
   /// Constructor to initialize the allocator with the arena to allocator from.
   /// \param  arena The arena for allocation.
@@ -460,24 +478,26 @@ class PoolAllocator {
   ///
   /// If the pool is full, this will return a nullptr.
   ///
-  /// \param size      The size of the element to allocate.
-  /// \param alignment The alignment for the allocation.
-  auto alloc(size_t size = element_size, size_t alignment = alignment) noexcept
+  /// \param size  The size of the element to allocate.
+  /// \param align The alignment for the allocation.
+  auto
+  alloc(size_t size = element_size_v, size_t alignment = alignment_v) noexcept
     -> void* {
-    assert(size <= element_size && alignment <= alignnment);
-    return _freeList.pop_front();
+    assert(size <= element_size_v && alignment <= alignment_v);
+    return _freelist.pop_front();
   }
 
   /// Frees the \p ptr, pushing it onto the front of the freelist.
   /// \param ptr The pointer to free.
-  auto free(void* ptr, size_t = element_size) noexcept -> void {
-    _freeList.push_front(ptr);
+  auto free(void* ptr, size_t = element_size_v) noexcept -> void {
+    _freelist.push_front(ptr);
   }
 
   /// Returns true if the allocator owns the \p ptr.
   /// \param ptr The pointer to determine if is owned by the allocator.
   auto owns(void* ptr) const -> bool {
-    return uintptr_t(ptr) >= _begin && uintptr_t(ptr) < _end;
+    return uintptr_t(ptr) >= uintptr_t(_begin) &&
+           uintptr_t(ptr) < uintptr_t(_end);
   }
 
   /// Resets the pool. Since the freelist doesn't support restting, this doesn't
@@ -485,9 +505,9 @@ class PoolAllocator {
   auto reset() -> void {}
 
  private:
-  freelist_t _freelist;        //!< The freelist to allocate from and free into.
-  void*      _begin = nullptr; //!< The beginning of the pool arena.
-  void*      _end   = nullptr; //!< The end of the pool arena.
+  FreeList    _freelist; //!< The freelist to allocate from and free into.
+  const void* _begin = nullptr; //!< The beginning of the pool arena.
+  const void* _end   = nullptr; //!< The end of the pool arena.
 };
 
 } // namespace ripple
