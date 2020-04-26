@@ -26,7 +26,7 @@
 namespace ripple::glow::backend {
 
 /// Alias for the type of the extension vector.
-using ext_vector_t = std::vector<const char*>;
+using ExtVector = std::vector<const char*>;
 
 /// The Platform type defines an interface for platform-specific
 /// window-intefration funcitonality.
@@ -41,8 +41,6 @@ using ext_vector_t = std::vector<const char*>;
 /// \tparam Impl The type of the implementation of the interface.
 template <typename Impl>
 class Platform {
-  using impl_t = std::decay_t<Impl>; //!< Implementation type.
-
   //==--- [constants] ------------------------------------------------------==//
 
   static constexpr auto default_w = 1280; //!< Default widht.
@@ -54,13 +52,13 @@ class Platform {
   friend Impl;
 
   /// Returns a const pointer to the implementation.
-  constexpr auto impl() const -> const impl_t* {
-    return static_cast<const impl_t*>(this);
+  constexpr auto impl() const -> const Impl* {
+    return static_cast<const Impl*>(this);
   }
 
   /// Returns a pointer to the implementation.
-  constexpr auto impl() -> impl_t* {
-    return static_cast<impl_t*>(this);
+  constexpr auto impl() -> Impl* {
+    return static_cast<Impl*>(this);
   }
 
  public:
@@ -84,12 +82,12 @@ class Platform {
   }
 
   /// Gets the vulkan device extensions for the platform.
-  auto device_extensions() const -> ext_vector_t {
+  auto device_extensions() const -> ExtVector {
     return impl()->get_device_extensions();
   }
 
   /// Gets the vulkan instance extensions for the platform.
-  auto instance_extensions() const -> ext_vector_t {
+  auto instance_extensions() const -> ExtVector {
     return impl()->get_instance_extensions();
   }
 

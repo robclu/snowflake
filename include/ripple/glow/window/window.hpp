@@ -30,7 +30,7 @@ namespace ripple::glow {
 class Window {
  public:
   /// Defines the type of the driver pointer.
-  using engine_ptr_t = Engine*;
+  using EnginePtr = Engine*;
 
   //==--- [construction] ---------------------------------------------------==//
 
@@ -41,7 +41,7 @@ class Window {
   /// \param width  The (width) of the window  - pixels in the x dimension.
   /// \param height The (height) of the window - pixels in the y dimension.
   Window(
-    engine_ptr_t       engine,
+    EnginePtr          engine,
     const std::string& title,
     uint32_t           width,
     uint32_t           height);
@@ -61,7 +61,7 @@ class Window {
   //===--- [operator overloads] --------------------------------------------==//
 
   /// Move assignment operator.
-  auto operator=(Window &&) -> Window& = default;
+  auto operator=(Window&&) -> Window& = default;
 
   //==--- [interface] ------------------------------------------------------==//
 
@@ -72,7 +72,7 @@ class Window {
   auto poll_input() -> void;
 
  private:
-  engine_ptr_t _engine; //!< Pointer to the engine.
+  EnginePtr _engine; //!< Pointer to the engine.
 
   /// Initializes the window by creating the engine and the initializing the
   /// engine platform.  Returns true if everything was created successfully.

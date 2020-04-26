@@ -58,9 +58,14 @@ auto VulkanSurfaceContext::init(
   return true;
 }
 
-auto VulkanSurfaceContext::present(const VulkanContext& context) -> bool {
+auto VulkanSurfaceContext::present(
+  const VulkanContext& context, std::atomic_uint32_t& fence) -> bool {
   if (_done_rendering == VK_NULL_HANDLE) {
     return false;
+  }
+
+  while (fence.load(std::memory_order_relaxed) > 0) {
+    // Wait for any outstanding work on other threads ...
   }
 
   VkResult         result = VK_SUCCESS;

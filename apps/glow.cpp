@@ -11,7 +11,16 @@ auto run_application() -> void {
 
     // Do some event handling
 
-    engine->driver()->begin_frame(*(engine->platform()));
+    auto* driver = engine->driver();
+    driver->begin_frame(*(engine->platform()));
+
+    auto cmd =
+      driver
+        ->request_command_buffer<ripple::glow::CommandBufferKind::graphics>();
+
+    driver->submit(cmd);
+
+    driver->end_frame(*(engine->platform()));
   }
 }
 

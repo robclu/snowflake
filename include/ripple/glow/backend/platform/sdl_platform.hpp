@@ -26,9 +26,9 @@ namespace ripple::glow::backend {
 /// The SdlPlatform wraps SDL functionality which is common for all platforms
 /// which use SDL.
 class SdlPlatform : public Platform<SdlPlatform> {
-  using window_ptr_t    = SDL_Window*;           //!< Window pointer type.
-  using base_platform_t = Platform<SdlPlatform>; //!< Base platform type.
-  window_ptr_t _window  = nullptr;               //!< Pointer to the window.
+  using WindowPtr    = SDL_Window*;           //!< Window pointer type.
+  using BasePlatform = Platform<SdlPlatform>; //!< Base platform type.
+  WindowPtr _window  = nullptr;               //!< Pointer to the window.
 
  public:
   //==--- [construction] ---------------------------------------------------==//
@@ -68,10 +68,10 @@ class SdlPlatform : public Platform<SdlPlatform> {
     -> VkSurfaceKHR;
 
   /// Gets the vulkan device extensions for the platform.
-  auto get_device_extensions() const -> ext_vector_t;
+  auto get_device_extensions() const -> ExtVector;
 
   /// Gets the vulkan instance extensions for the platform.
-  auto get_instance_extensions() const -> ext_vector_t;
+  auto get_instance_extensions() const -> ExtVector;
 
   /// Returns true if the platform is still alive.
   auto is_alive_impl() const -> bool;

@@ -48,11 +48,11 @@ struct SwapContext {
 class VulkanSurfaceContext {
   // clang-format off
   /// Defines the type of the vector for the formats.
-  using formats_t       = std::vector<VkSurfaceFormatKHR>;
+  using Formats      = std::vector<VkSurfaceFormatKHR>;
   /// Defines the type of the vector for the swap context.
-  using swap_contexts_t = std::vector<SwapContext>;
+  using SwapContexts = std::vector<SwapContext>;
   /// Defines a container of supported present modes.
-  using present_modes_t = std::vector<VkPresentModeKHR>;
+  using PresentModes = std::vector<VkPresentModeKHR>;
   // clang-format on
 
  public:
@@ -109,7 +109,10 @@ class VulkanSurfaceContext {
   /// the `done_rendering_semaphore()` is not valid, or if there was an error
   /// with the presentation.
   /// \param context The context whose graphics queue will be presented to.
-  auto present(const VulkanContext& context) -> bool;
+  /// \param fence   A fence to wait on, while the value of the fence is greater
+  ///                than zero.
+  auto
+  present(const VulkanContext& context, std::atomic_uint32_t& fence) -> bool;
 
   /// Re-initializes the surface context with \p width and \p height and \p
   /// present_mode.
@@ -137,13 +140,13 @@ class VulkanSurfaceContext {
   VkSurfaceFormatKHR            _surface_format;    //!< Format being used.
   VkSurfaceTransformFlagBitsKHR _surface_transform; //!< Surface transform.
   VkExtent2D                    _swapchain_size;    //!< Size of the surface.
-  formats_t                     _formats;           //!< All available format.
-  swap_contexts_t               _swap_contexts;     //!< Swap contexts.
+  Formats                       _formats;           //!< All available format.
+  SwapContexts                  _swap_contexts;     //!< Swap contexts.
 
   // clang-format off
   /// All supported present modes, so we dont have to query them each time the
   /// swapchain is recreated.
-  present_modes_t  _present_modes;
+  PresentModes     _present_modes;
   /// The present mode for the surface.
   PresentMode      _present_mode = PresentMode::sync_to_vblank;
   /// The present mode for the swapchain.

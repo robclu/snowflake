@@ -29,7 +29,7 @@ auto Engine::create() -> Engine* {
 //==--- [private] ----------------------------------------------------------==//
 
 Engine::Engine() {
-  _driver = driver_t::create(_platform);
+  _driver = Driver::create(_platform);
 }
 
 } // namespace ripple::glow

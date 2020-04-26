@@ -29,9 +29,9 @@ class Engine {
   // clang-format off
   /// Defines the type of the platform.
   /// \todo Change this to be a reference counted type.
-  using platform_t = backend::platform_type_t;
+  using Platform = backend::PlatformType;
   /// Defines the type of the driver.
-  using driver_t   = backend::VulkanDriver;
+  using Driver   = backend::VulkanDriver;
   // clang-format on
 
   //==--- [construction] ---------------------------------------------------==//
@@ -59,17 +59,17 @@ class Engine {
   //==--- [interface] ------------------------------------------------------==//
 
   /// Returns a pointer to the platform.
-  auto platform() -> platform_t* {
+  auto platform() -> Platform* {
     return &_platform;
   }
 
   /// Returns a const pointer to the platform.
-  auto platform() const -> const platform_t* {
+  auto platform() const -> const Platform* {
     return &_platform;
   }
 
   /// Returns a pointer to the driver.
-  auto driver() -> driver_t* {
+  auto driver() -> Driver* {
     return _driver;
   }
 
@@ -81,8 +81,8 @@ class Engine {
 
   //==--- [members] --------------------------------------------------------==//
 
-  platform_t _platform;         //!< The platform to run on.
-  driver_t*  _driver = nullptr; //!< The driver for engine.
+  Platform _platform;         //!< The platform to run on.
+  Driver*  _driver = nullptr; //!< The driver for engine.
 };
 
 } // namespace ripple::glow

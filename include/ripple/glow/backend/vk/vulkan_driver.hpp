@@ -16,13 +16,15 @@
 #ifndef RIPPLE_GLOW_BACKEND_VK_VULKAN_DRIVER_HPP
 #define RIPPLE_GLOW_BACKEND_VK_VULKAN_DRIVER_HPP
 
+#include "driver_allocator.hpp"
 #include "frame_data.hpp"
 #include "vulkan_context.hpp"
 #include "vulkan_surface_context.hpp"
 #include "../platform/platform.hpp"
+#include <array>
 
 /// Defines the number of frame contexts used by the driver.
-static constexpr size_t num_frame_contexts_cx =
+static constexpr size_t num_frame_contexts_v =
 #if defined(GLOW_FRAME_CONTEXTS)
   GLOW_FRAME_CONTEXTS;
 #else
@@ -47,9 +49,13 @@ class VulkanDriver {
 
   // clang-format off
   /// Defines the type of the platform for the driver.
-  using platform_t        = platform_type_t;
+  using Platform          = PlatformType;
   /// Defines the type of the per frame data container.
-  using frame_container_t = std::vector<FrameData>;
+  using FrameContainer    = std::vector<FrameData>;
+  /// Defines the type of the command buffer counter.
+  using CmdBufferCounter  = std::atomic_uint32_t;
+  /// Defines the type of the submission counter.
+  using CmdBufferCounters = std::array<CmdBufferCounter, num_frame_contexts_v>;
   // clang-format on
 
   //==--- [construction] ---------------------------------------------------==//
@@ -58,7 +64,7 @@ class VulkanDriver {
   /// \param platform The platform to create the driver with.
   /// \param threads  The number of threads to use for the driver.
   static auto
-  create(const platform_t& platform, uint16_t threads = 1) -> VulkanDriver*;
+  create(const Platform& platform, uint16_t threads = 1) -> VulkanDriver*;
 
   /// Destructor to clean up the device resources.
   ~VulkanDriver();
@@ -102,7 +108,7 @@ class VulkanDriver {
   ///
   /// \param platform The platform to poll for input and to use to reinitialize
   ///                 the swapchain if necessary.
-  auto begin_frame(platform_t& platform) -> bool;
+  auto begin_frame(Platform& platform) -> bool;
 
   /// Ends the frame for the driver. This does the following:
   ///
@@ -116,14 +122,53 @@ class VulkanDriver {
   ///
   /// \param platform The platform to use to reintialize the swapchain is
   ///                 necessary.
-  auto end_frame(platform_t& platform) -> bool;
+  auto end_frame(Platform& platform) -> bool;
+
+  //==--- [command buffers] ------------------------------------------------==//
+
+  /// Request a command buffer with CommandBufferKind, returning a handle to the
+  /// command buffer.
+  template <CommandBufferKind BufferKind>
+  auto request_command_buffer(size_t thread_index = 0) -> CommandBufferHandle {
+    auto cmd_buffer = current_frame()
+                        .get_command_pool<BufferKind>(thread_index)
+                        .request_command_buffer();
+
+    VkCommandBufferBeginInfo info = {
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    _context.device_table()->vkBeginCommandBuffer(cmd_buffer, &info);
+
+    current_command_buffer_counter().fetch_add(1, std::memory_order_relaxed);
+
+    return CommandBufferHandle(
+      _allocator.cmd_buffer_allocator.create<VulkanCommandBuffer>(
+        this, cmd_buffer, BufferKind, thread_index));
+  }
+
+  /// Submits the command buffer pointed to by the \p bufer.
+  /// \param buffer The buffer to submit.
+  auto submit(CommandBufferHandle buffer) -> void {
+    // Implement submit functionality
+
+    current_command_buffer_counter().fetch_sub(1, std::memory_order_relaxed);
+  }
 
  private:
-  VulkanContext        _context;         //!< Vulkan context.
-  VulkanSurfaceContext _surface_context; //!< Surface related context.
-  frame_container_t    _frames;          //!< The frames for the engine.
-  uint16_t             _num_threads = 1; //!< The number of threads being used.
-  uint8_t              _frame_index = 0; //!< Index of the frame.
+  //==--- [friends] --------------------------------------------------------==//
+
+  /// Allows the deleter to access the allocator for deletion.
+  friend CommandBufferDeleter;
+
+  //==--- [memebers] -------------------------------------------------------==//
+
+  VulkanContext        _context;             //!< Vulkan context.
+  VulkanSurfaceContext _surface_context;     //!< Surface related context.
+  FrameContainer       _frames;              //!< The frames for the engine.
+  DriverAllocator      _allocator;           //!< Allocators for the driver.
+  CmdBufferCounters    _cmd_buffer_counters; //!< Number of command buffers.
+  uint16_t             _num_threads = 1;     //!< Number of driver threads.
+  uint8_t              _frame_index = 0;     //!< Index of the frame.
 
   // clang-format off
   /// Present mode for the driver.
@@ -135,19 +180,24 @@ class VulkanDriver {
   /// Constructor to initialize the device.
   /// \param platform The platform to create the driver for.
   /// \param threads  The number of threads for the driver.
-  VulkanDriver(const platform_t& platform, uint16_t threads);
+  VulkanDriver(const Platform& platform, uint16_t threads);
 
   /// Tries to acquire the next swapchain image, returning true on success, and
   /// false on failure.
   /// \param platform The platform to use to recreate the swapchain if
   ///                 necessary.
-  auto acquire_next_image(platform_t& platform) -> bool;
+  auto acquire_next_image(Platform& platform) -> bool;
 
   /// Advances the frame data for the driver to the next frame.
   auto advance_frame_data() -> void;
 
   /// Creates the frame data.
   auto create_frame_data() -> void;
+
+  /// Returns the current command buffer counter.
+  auto current_command_buffer_counter() -> CmdBufferCounter& {
+    return _cmd_buffer_counters[_frame_index];
+  }
 };
 
 } // namespace ripple::glow::backend

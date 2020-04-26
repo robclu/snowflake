@@ -27,7 +27,7 @@ namespace ripple::glow::backend {
 //==--- [interface] --------------------------------------------------------==//
 
 auto VulkanDriver::create(
-  const VulkanDriver::platform_t& platform, uint16_t threads) -> VulkanDriver* {
+  const VulkanDriver::Platform& platform, uint16_t threads) -> VulkanDriver* {
   static VulkanDriver driver(platform, threads);
   return &driver;
 }
@@ -35,8 +35,12 @@ auto VulkanDriver::create(
 //==--- [con/destruction] --------------------------------------------------==//
 
 VulkanDriver::VulkanDriver(
-  const VulkanDriver::platform_t& platform, uint16_t threads)
+  const VulkanDriver::Platform& platform, uint16_t threads)
 : _num_threads(threads) {
+  for (auto& cmd_buffer_counter : _cmd_buffer_counters) {
+    cmd_buffer_counter.store(0, std::memory_order_relaxed);
+  }
+
   auto ins_extensions = platform.instance_extensions();
   auto dev_extensions = platform.device_extensions();
   if (!_context.create_instance_and_device(
@@ -68,7 +72,7 @@ VulkanDriver::~VulkanDriver() {}
 
 //==--- [frame interface implementation] -----------------------------------==//
 
-auto VulkanDriver::begin_frame(platform_t& platform) -> bool {
+auto VulkanDriver::begin_frame(VulkanDriver::Platform& platform) -> bool {
   advance_frame_data();
 
   // Try and acquire the next image, if this fails, we lost the swapchain, or
@@ -79,12 +83,12 @@ auto VulkanDriver::begin_frame(platform_t& platform) -> bool {
   return true;
 }
 
-auto VulkanDriver::end_frame(platform_t& platform) -> bool {
+auto VulkanDriver::end_frame(VulkanDriver::Platform& platform) -> bool {
   // TODO: Add call to reset_frame_data() when there is frame data which
   // required resetting.
   _acquired_swapchain = false;
 
-  if (!_surface_context.present(_context)) {
+  if (!_surface_context.present(_context, current_command_buffer_counter())) {
     // Reset the swapchain ...
     return false;
   }
@@ -101,7 +105,8 @@ auto VulkanDriver::end_frame(platform_t& platform) -> bool {
 
 //==--- [private] ----------------------------------------------------------==//
 
-auto VulkanDriver::acquire_next_image(platform_t& platform) -> bool {
+auto VulkanDriver::acquire_next_image(VulkanDriver::Platform& platform)
+  -> bool {
   if (_acquired_swapchain) {
     return true;
   }
@@ -154,12 +159,12 @@ auto VulkanDriver::advance_frame_data() -> void {
     log_error("No frame data for driver!");
   }
 
-  _frame_index = (_frame_index + 1) % num_frame_contexts_cx;
+  _frame_index = (_frame_index + 1) % num_frame_contexts_v;
   current_frame().reset();
 }
 
 auto VulkanDriver::create_frame_data() -> void {
-  for (uint8_t i = 0; i < num_frame_contexts_cx; ++i) {
+  for (uint8_t i = 0; i < num_frame_contexts_v; ++i) {
     _frames.emplace_back(
       this,
       _context.graphics_queue_family_index(),

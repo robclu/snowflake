@@ -30,7 +30,7 @@ SdlPlatform::SdlPlatform() {
 
 SdlPlatform::SdlPlatform(
   const std::string& title, uint32_t width, uint32_t height)
-: base_platform_t(width, height) {
+: BasePlatform(width, height) {
   initialize();
   set_title(title);
 }
@@ -65,14 +65,14 @@ auto SdlPlatform::is_alive_impl() const -> bool {
   }
   return true;
 }
-auto SdlPlatform::get_device_extensions() const -> ext_vector_t {
-  return ext_vector_t{"VK_KHR_swapchain"};
+auto SdlPlatform::get_device_extensions() const -> ExtVector {
+  return ExtVector{"VK_KHR_swapchain"};
 }
 
-auto SdlPlatform::get_instance_extensions() const -> ext_vector_t {
+auto SdlPlatform::get_instance_extensions() const -> ExtVector {
   unsigned num_ins_exts = 0;
   SDL_Vulkan_GetInstanceExtensions(_window, &num_ins_exts, nullptr);
-  auto instance_names = ext_vector_t(num_ins_exts);
+  auto instance_names = ExtVector(num_ins_exts);
   SDL_Vulkan_GetInstanceExtensions(
     _window, &num_ins_exts, instance_names.data());
   return instance_names;

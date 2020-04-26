@@ -21,10 +21,10 @@ namespace ripple::glow {
 //==--- [con/destruction] --------------------------------------------------==//
 
 Window::Window(
-  Window::engine_ptr_t engine,
-  const std::string&   title,
-  uint32_t             width,
-  uint32_t             height)
+  Window::EnginePtr  engine,
+  const std::string& title,
+  uint32_t           width,
+  uint32_t           height)
 : _engine(engine) {
   if (!init(title, width, height)) {
     log_error("Failed to initialize window.");

@@ -27,7 +27,7 @@ namespace ripple::glow::backend {
 /// what we are running on, unless another flag has been defined in the build
 /// to specify the type of the platform, such as a headless platform, otherwise
 /// we just use the SDL platform since it handles all common platforms.
-using platform_type_t =
+using PlatformType =
 #if defined(GLOW_HEADLESS_PLATFORM)
   HeadlessPlatform;
 #else
