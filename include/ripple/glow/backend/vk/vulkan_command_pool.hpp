@@ -28,10 +28,12 @@ class VulkanDriver;
 /// This is a wrapper around a VkCommandPool which makes its use simpler.
 class VulkanCommandPool {
  public:
+  // clang-format off
   /// Defines the type of the stored driver.
-  using driver_ptr = VulkanDriver*;
+  using DriverPtr       = VulkanDriver*;
   /// Defines the type of the stored buffers.
-  using buffers_t = std::vector<VkCommandBuffer>;
+  using BufferContainer = std::vector<VkCommandBuffer>;
+  // clang-format on
 
   //==--- [construction] ---------------------------------------------------==//
 
@@ -40,7 +42,7 @@ class VulkanCommandPool {
   /// pool.
   /// \param driver             The driver which can be used to create the pool.
   /// \param queue_family_index The index of the queue family for the pool.
-  VulkanCommandPool(driver_ptr driver, uint32_t queue_family_index);
+  VulkanCommandPool(DriverPtr driver, uint32_t queue_family_index);
 
   /// Destructor to clean up the command pool.
   ~VulkanCommandPool();
@@ -63,6 +65,9 @@ class VulkanCommandPool {
 
   //==--- [interface] ------------------------------------------------------==//
 
+  /// Destroys the command pool.
+  auto destroy() -> void;
+
   /// Requests a command buffer from the pool.
   auto request_command_buffer() -> VkCommandBuffer;
 
@@ -73,12 +78,12 @@ class VulkanCommandPool {
   auto reset() -> void;
 
  private:
-  buffers_t     _buffers;                          //!< Primary buffers.
-  buffers_t     _secondary_buffers;                //!< Secondary buffers.
-  driver_ptr    _driver          = nullptr;        //!< The driver.
-  VkCommandPool _pool            = VK_NULL_HANDLE; //!< Command pool.
-  unsigned      _index           = 0;              //!< Primary index.
-  unsigned      _secondary_index = 0;              //!< Secondary index.
+  BufferContainer _buffers;                          //!< Primary buffers.
+  BufferContainer _secondary_buffers;                //!< Secondary buffers.
+  DriverPtr       _driver          = nullptr;        //!< The driver.
+  VkCommandPool   _pool            = VK_NULL_HANDLE; //!< Command pool.
+  unsigned        _index           = 0;              //!< Primary index.
+  unsigned        _secondary_index = 0;              //!< Secondary index.
 };
 
 } // namespace ripple::glow::backend

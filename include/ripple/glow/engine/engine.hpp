@@ -41,7 +41,7 @@ class Engine {
   static auto create() -> Engine*;
 
   /// Destructor -- defaulted.
-  ~Engine() = default;
+  ~Engine();
 
   //==--- [deleted] --------------------------------------------------------==//
 

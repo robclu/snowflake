@@ -58,6 +58,11 @@ class VulkanContext {
   /// Destructor to clean up the resources.
   ~VulkanContext();
 
+  /// Destroys the context. This is provided to allow explicit control of
+  /// destroying the context. If this is not called, the destructor will clean
+  /// up the context.
+  auto destroy() -> void;
+
   // clang-format on
 
   //==--- [operator overloads] ---------------------------------------------==//
@@ -83,11 +88,17 @@ class VulkanContext {
   /// Creates the instance and the device, with \p ins_extensions for the
   /// instance, and \p dev_extensions for the device. This returns false if the
   /// initialization was not successful.
+  /// \param ins_extensions     The instance extensions.
+  /// \param num_ins_extensions The number of instance extensions.
+  /// \param dev_extensions     The device extensions.
+  /// \param num_dev_extensions The number of device extensions.
+  /// \param surface            The surface for creation.
   auto create_instance_and_device(
     const char** ins_extensions,
     uint32_t     num_ins_extensions,
     const char** dev_extensions,
-    uint32_t     num_dev_extesions) -> bool;
+    uint32_t     num_dev_extesions,
+    VkSurfaceKHR surface = VK_NULL_HANDLE) -> bool;
 
   /// Returns the vulkan instance.
   auto instance() const -> VkInstance {
@@ -188,6 +199,7 @@ class VulkanContext {
   bool _supports_surface_caps_2  = false; //!< Supports surf caps 2.
   bool _supports_phy_dev_props_2 = false; //!< Supports dev props 2.
   bool _supports_external        = false; //!< Supports external props.
+  bool _destroyed                = false; //!< If the context is destroyed.
 
 #ifdef VULKAN_DEBUG
   bool _supports_debug_utils = false; //!< Supports debug utils.
@@ -294,9 +306,6 @@ class VulkanContext {
   /// \param dev_layers The required device layers.
   /// \param num_layers The number of layers.
   auto validate_layers(const char** dev_layers, uint32_t num_layers) -> bool;
-
-  /// Destroys the context and assosciated resources.
-  auto destroy() -> void;
 };
 
 } // namespace ripple::glow::backend

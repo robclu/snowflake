@@ -32,4 +32,8 @@ Engine::Engine() {
   _driver = Driver::create(_platform);
 }
 
+Engine::~Engine() {
+  _driver->destroy();
+}
+
 } // namespace ripple::glow

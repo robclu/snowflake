@@ -215,7 +215,8 @@ auto VulkanContext::create_instance_and_device(
   const char** ins_extensions,
   uint32_t     num_ins_extensions,
   const char** dev_extensions,
-  uint32_t     num_dev_extensions) -> bool {
+  uint32_t     num_dev_extensions,
+  VkSurfaceKHR surface) -> bool {
   destroy();
 
   if (!create_instance(ins_extensions, num_ins_extensions)) {
@@ -225,12 +226,7 @@ auto VulkanContext::create_instance_and_device(
   }
 
   auto created_device = create_device(
-    VK_NULL_HANDLE,
-    VK_NULL_HANDLE,
-    dev_extensions,
-    num_dev_extensions,
-    nullptr,
-    0);
+    VK_NULL_HANDLE, surface, dev_extensions, num_dev_extensions, nullptr, 0);
 
   if (!created_device) {
     destroy();
@@ -238,6 +234,7 @@ auto VulkanContext::create_instance_and_device(
     return false;
   }
 
+  _destroyed = false;
   return true;
 }
 
@@ -760,6 +757,10 @@ auto VulkanContext::create_device(
 }
 
 auto VulkanContext::destroy() -> void {
+  if (_destroyed) {
+    return;
+  }
+
   if (_device != VK_NULL_HANDLE) {
     _device_table.vkDeviceWaitIdle(_device);
   }
@@ -777,10 +778,13 @@ auto VulkanContext::destroy() -> void {
 
   if (_device != VK_NULL_HANDLE) {
     _device_table.vkDestroyDevice(_device, nullptr);
+    _device = VK_NULL_HANDLE;
   }
   if (_instance != VK_NULL_HANDLE) {
     vkDestroyInstance(_instance, nullptr);
+    _device = VK_NULL_HANDLE;
   }
+  _destroyed = true;
 }
 
 } // namespace ripple::glow::backend

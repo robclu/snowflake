@@ -56,6 +56,39 @@ auto FrameData::reset() -> void {
   command_pools.reset();
 }
 
+auto FrameData::destroy() -> void {
+  // clang-format off
+  // Make sure that these can't be waited on
+  sync.graphics_timeline_fence = 0;
+  sync.compute_timeline_fence  = 0;
+  sync.transfer_timeline_fence = 0;
+  // clang-format on
+
+  auto* dev_table = _driver->context().device_table();
+  auto  device    = _driver->context().device();
+  if (sync.graphics_timeline_semaphore != VK_NULL_HANDLE) {
+    dev_table->vkDestroySemaphore(
+      device, sync.graphics_timeline_semaphore, nullptr);
+    sync.graphics_timeline_semaphore = VK_NULL_HANDLE;
+  }
+  if (sync.compute_timeline_semaphore != VK_NULL_HANDLE) {
+    dev_table->vkDestroySemaphore(
+      device, sync.compute_timeline_semaphore, nullptr);
+    sync.compute_timeline_semaphore = VK_NULL_HANDLE;
+  }
+  if (sync.transfer_timeline_semaphore != VK_NULL_HANDLE) {
+    dev_table->vkDestroySemaphore(
+      device, sync.transfer_timeline_semaphore, nullptr);
+    sync.transfer_timeline_semaphore = VK_NULL_HANDLE;
+  }
+
+  // clang-format off
+  for (auto& pool : command_pools.graphics) { pool.destroy(); }
+  for (auto& pool : command_pools.compute)  { pool.destroy(); }
+  for (auto& pool : command_pools.transfer) { pool.destroy(); }
+  // clang-format on
+}
+
 //==--- [frame command pools] ----------------------------------------------==//
 
 FrameCommandPools::FrameCommandPools(
@@ -75,6 +108,7 @@ auto FrameCommandPools::reset() -> void {
   for (auto& pool : graphics) { pool.reset(); }
   for (auto& pool : compute)  { pool.reset(); }
   for (auto& pool : transfer) { pool.reset(); }
+  // clang-format on
 }
 
 } // namespace ripple::glow::backend

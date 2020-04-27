@@ -32,10 +32,10 @@ enum class PresentMode : uint8_t {
 };
 
 struct VulkanAttachment {
-  VkFormat       format;     //!< Format of the attachment.
-  VkImage        image;      //!< Image for the attachment.
-  VkImageView    image_view; //!< View of the attachment image.
-  VkDeviceMemory memory;     //!< Memory for the attachment.
+  VkFormat       format;                      //!< Format of the attachment.
+  VkImage        image      = VK_NULL_HANDLE; //!< Image for the attachment.
+  VkImageView    image_view = VK_NULL_HANDLE; //!< View of the attachment image.
+  VkDeviceMemory memory     = VK_NULL_HANDLE; //!< Memory for the attachment.
 };
 
 /// The SwapContext is a set of resources that are swapped in and out at the
@@ -51,11 +51,19 @@ class VulkanSurfaceContext {
   using Formats      = std::vector<VkSurfaceFormatKHR>;
   /// Defines the type of the vector for the swap context.
   using SwapContexts = std::vector<SwapContext>;
+  /// Defines the type of the vector for the images.
+  using Images       = std::vector<VkImage>;
   /// Defines a container of supported present modes.
   using PresentModes = std::vector<VkPresentModeKHR>;
   // clang-format on
 
  public:
+  //==--- [interface] ------------------------------------------------------==//
+
+  /// Destroys the surface context.
+  /// \param context The vulkan context to use to destroy the surface context.
+  auto destroy(const VulkanContext& context) -> void;
+
   /// Gets a reference to the surface.
   auto surface() -> VkSurfaceKHR& {
     return _surface;
@@ -130,11 +138,11 @@ class VulkanSurfaceContext {
     uint32_t             height) -> bool;
 
  private:
-  /// The surface for the
   VkSurfaceKHR   _surface         = VK_NULL_HANDLE; //!< Context surface.
   VkSwapchainKHR _swapchain       = VK_NULL_HANDLE; //!< Current swapchain.
   VkSemaphore    _image_available = VK_NULL_HANDLE; //!< If image is available.
   VkSemaphore    _done_rendering  = VK_NULL_HANDLE; //!< For finished rendering.
+  VkQueue        _present_queue   = VK_NULL_HANDLE; //!< Presentation queue.
 
   VkSurfaceCapabilitiesKHR      _surface_caps;      //!< Surface capabilities.
   VkSurfaceFormatKHR            _surface_format;    //!< Format being used.
@@ -214,6 +222,10 @@ class VulkanSurfaceContext {
   /// Sets the present mode for the swapchain.
   auto set_present_mode() -> void;
 
+  /// Sets the presentation queue.
+  /// \param context The vulkan context.
+  auto set_present_queue(const VulkanContext& context) -> void;
+
   /// Sets the transform properties for the surface.
   /// \param context The vulkan context.
   auto set_surface_transform(const VulkanContext& context) -> void;
@@ -223,6 +235,24 @@ class VulkanSurfaceContext {
 
   /// Sets the composite modes for the swapchain.
   auto set_composite_mode() -> void;
+
+  //==--- [destruction] ----------------------------------------------------==//
+
+  /// Destroys the semaphores using the \p context.
+  /// \param context The vulkan context used to initialize the semaphores.
+  auto destroy_semaphores(const VulkanContext& context) -> void;
+
+  /// Destroys the surface using the \p context.
+  /// \param context The vulkan context used to initialize the surface.
+  auto destroy_surface(const VulkanContext& context) -> void;
+
+  /// Destroys the swapchain using the \p context.
+  /// \param context The vulkan context used to initialize the swapchain.
+  auto destroy_swapchain(const VulkanContext& context) -> void;
+
+  /// Destroys the swap contexts using the \p context.
+  /// \param context The vulkan context used to initialize the swap contexts.
+  auto destroy_swap_contexts(const VulkanContext& context) -> void;
 };
 
 } // namespace ripple::glow::backend

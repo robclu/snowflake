@@ -114,7 +114,11 @@ struct FrameData {
     uint32_t      compute_queue_index,
     uint32_t      transfer_queue_index);
 
-  /// Resets all data for the frame data.
+  /// Destroys the frame data.
+  auto destroy() -> void;
+
+  /// Resets all data for the frame data. This will wait on the semaphores if
+  /// they are all valid.
   auto reset() -> void;
 
   /// Returns the command pool of the command buffer kind specified by

@@ -66,8 +66,8 @@ class VulkanDriver {
   static auto
   create(const Platform& platform, uint16_t threads = 1) -> VulkanDriver*;
 
-  /// Destructor to clean up the device resources.
-  ~VulkanDriver();
+  /// Destroys the driver.
+  auto destroy() -> void;
 
   //==--- [interface] ------------------------------------------------------==//
 
@@ -148,11 +148,10 @@ class VulkanDriver {
 
   /// Submits the command buffer pointed to by the \p bufer.
   /// \param buffer The buffer to submit.
-  auto submit(CommandBufferHandle buffer) -> void {
-    // Implement submit functionality
+  auto submit(CommandBufferHandle buffer) -> void;
 
-    current_command_buffer_counter().fetch_sub(1, std::memory_order_relaxed);
-  }
+  /// Waits idly until everything for the current frame is done.
+  auto wait_idle() -> void;
 
  private:
   //==--- [friends] --------------------------------------------------------==//
@@ -175,12 +174,17 @@ class VulkanDriver {
   PresentMode _present_mode       = PresentMode::sync_to_vblank;
   // If the swapchain has been acquired.
   bool        _acquired_swapchain = false;
+  /// If the driver has been destroyed.
+  bool        _destroyed          = false;
   // clang-format on
 
   /// Constructor to initialize the device.
   /// \param platform The platform to create the driver for.
   /// \param threads  The number of threads for the driver.
   VulkanDriver(const Platform& platform, uint16_t threads);
+
+  /// Destructor to clean up driver resources.
+  ~VulkanDriver();
 
   /// Tries to acquire the next swapchain image, returning true on success, and
   /// false on failure.
@@ -198,6 +202,23 @@ class VulkanDriver {
   auto current_command_buffer_counter() -> CmdBufferCounter& {
     return _cmd_buffer_counters[_frame_index];
   }
+
+  /// Flushes all pending submissiong.
+  auto flush_pending_submissions() -> void;
+
+  //==--- [clean up] -------------------------------------------------------==//
+
+  /// Destroys the device for the driver.
+  auto destroy_device() -> void;
+
+  /// Destroys the frame data.
+  auto destroy_frame_data() -> void;
+
+  /// Destroys the instance.
+  auto destroy_instance() -> void;
+
+  /// Destroys the surface context.
+  auto destroy_surface_context() -> void;
 };
 
 } // namespace ripple::glow::backend

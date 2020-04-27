@@ -20,7 +20,7 @@
 namespace ripple::glow::backend {
 
 VulkanCommandPool::VulkanCommandPool(
-  VulkanCommandPool::driver_ptr driver, uint32_t queue_family_index)
+  VulkanCommandPool::DriverPtr driver, uint32_t queue_family_index)
 : _driver(driver) {
   VkCommandPoolCreateInfo info = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
   info.flags                   = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
@@ -42,8 +42,8 @@ VulkanCommandPool::VulkanCommandPool(VulkanCommandPool&& other) noexcept {
 auto VulkanCommandPool::operator=(VulkanCommandPool&& other) noexcept
   -> VulkanCommandPool& {
   if (this != &other) {
-    const auto& table  = _driver->context().device_table();
-    const auto& device = _driver->context().device();
+    const auto* table  = _driver->context().device_table();
+    const auto  device = _driver->context().device();
 
     _driver = other._driver;
     if (!_buffers.empty()) {
@@ -64,9 +64,11 @@ auto VulkanCommandPool::operator=(VulkanCommandPool&& other) noexcept
   return *this;
 }
 
-VulkanCommandPool::~VulkanCommandPool() {
-  const auto& table  = _driver->context().device_table();
-  const auto& device = _driver->context().device();
+VulkanCommandPool::~VulkanCommandPool() {}
+
+auto VulkanCommandPool::destroy() -> void {
+  auto* table  = _driver->context().device_table();
+  auto  device = _driver->context().device();
   if (!_buffers.empty()) {
     table->vkFreeCommandBuffers(
       device, _pool, _buffers.size(), _buffers.data());

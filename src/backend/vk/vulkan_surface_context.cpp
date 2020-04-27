@@ -40,6 +40,15 @@ format_to_aspect_mask(VkFormat format) -> VkImageAspectFlags {
 
 } // namespace
 
+//==--- [interface] --------------------------------------------------------==//
+
+auto VulkanSurfaceContext::destroy(const VulkanContext& context) -> void {
+  destroy_swap_contexts(context);
+  destroy_swapchain(context);
+  destroy_semaphores(context);
+  destroy_surface(context);
+}
+
 auto VulkanSurfaceContext::init(
   const VulkanContext& context,
   PresentMode          present_mode,
@@ -64,11 +73,35 @@ auto VulkanSurfaceContext::present(
     return false;
   }
 
+  // Submit that we are done rendering:
+  // TODO: Move this intro the submission of the last command buffers.
+  //       Also, the wait semaphore should be somehting else when this is moved.
+  // clang-format off
+  VkPipelineStageFlags wait_dest_stage_mask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+  VkSubmitInfo         submit_info{
+    .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+    .waitSemaphoreCount   = 1u,
+    .pWaitSemaphores      = &_image_available,
+    .pWaitDstStageMask    = &wait_dest_stage_mask,
+    .commandBufferCount   = 0,
+    .pCommandBuffers      = nullptr,
+    .signalSemaphoreCount = 1u,
+    .pSignalSemaphores    = &_done_rendering,
+  };
+  // clang-format on
+
+  auto result =
+    vkQueueSubmit(context.graphics_queue(), 1, &submit_info, VK_NULL_HANDLE);
+  if (result != VK_SUCCESS) {
+    log_error("Failed to submit semaphore signal for done rendering.");
+  }
+
   while (fence.load(std::memory_order_relaxed) > 0) {
     // Wait for any outstanding work on other threads ...
   }
 
-  VkResult         result = VK_SUCCESS;
+  // Present:
+  result                  = VK_SUCCESS;
   VkPresentInfoKHR info   = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
   info.waitSemaphoreCount = 1;
   info.pWaitSemaphores    = &_done_rendering;
@@ -78,7 +111,7 @@ auto VulkanSurfaceContext::present(
   info.pResults           = &result;
 
   auto submit_result =
-    context.device_table()->vkQueuePresentKHR(context.graphics_queue(), &info);
+    context.device_table()->vkQueuePresentKHR(_present_queue, &info);
 
 #ifdef ANDROID
   // clang-format off
@@ -361,6 +394,45 @@ auto VulkanSurfaceContext::set_present_mode() -> void {
   }
 }
 
+auto VulkanSurfaceContext::set_present_queue(const VulkanContext& context)
+  -> void {
+  uint32_t queue_fam_count = 0;
+  vkGetPhysicalDeviceQueueFamilyProperties(
+    context.physical_device(), &queue_fam_count, nullptr);
+  std::vector<VkQueueFamilyProperties> queue_fam_props(queue_fam_count);
+  vkGetPhysicalDeviceQueueFamilyProperties(
+    context.physical_device(), &queue_fam_count, queue_fam_props.data());
+  uint32_t present_queue_fam_index = 0xffff;
+
+  // Check if graphics queue supports presentation, because that's ideal, and
+  // is the case for most platforms.
+  VkBool32 supported = VK_FALSE;
+  vkGetPhysicalDeviceSurfaceSupportKHR(
+    context.physical_device(),
+    context.graphics_queue_family_index(),
+    _surface,
+    &supported);
+
+  if (supported) {
+    _present_queue = context.graphics_queue();
+    return;
+  }
+
+  // If the graphics queue can't present, we need a separate one.
+  // Otherwise fall back to separate graphics and presentation queues.
+  for (uint32_t i = 0; i < queue_fam_count; ++i) {
+    vkGetPhysicalDeviceSurfaceSupportKHR(
+      context.physical_device(), i, _surface, &supported);
+    if (supported) {
+      context.device_table()->vkGetDeviceQueue(
+        context.device(), i, 0, &_present_queue);
+      return;
+    }
+  }
+
+  log_error("Failed to find a presentation queue!");
+}
+
 auto VulkanSurfaceContext::set_num_swapchain_images() -> void {
   // Already found the number of images, or set somewhere else.
   if (_num_images > 0) {
@@ -459,7 +531,8 @@ auto VulkanSurfaceContext::create_images(const VulkanContext& context) -> bool {
   }
 
   _swap_contexts.resize(image_count);
-  std::vector<VkImage> images(image_count);
+  std::vector<VkImage> images;
+  images.resize(image_count);
   result = context.device_table()->vkGetSwapchainImagesKHR(
     context.device(), _swapchain, &image_count, images.data());
   if (result != VK_SUCCESS) {
@@ -535,6 +608,8 @@ auto VulkanSurfaceContext::create_semaphores(const VulkanContext& context)
 
 auto VulkanSurfaceContext::init_swapchain(
   const VulkanContext& context, uint32_t width, uint32_t height) -> bool {
+  set_present_queue(context);
+
   if (!create_surface_caps(context)) {
     return false;
   }
@@ -576,6 +651,48 @@ auto VulkanSurfaceContext::init_swapchain(
     _formats.size());
 
   return true;
+}
+
+//==--- [destruction] ------------------------------------------------------==//
+
+auto VulkanSurfaceContext::destroy_semaphores(const VulkanContext& context)
+  -> void {
+  if (_image_available != VK_NULL_HANDLE) {
+    context.device_table()->vkDestroySemaphore(
+      context.device(), _image_available, nullptr);
+  }
+  if (_done_rendering != VK_NULL_HANDLE) {
+    context.device_table()->vkDestroySemaphore(
+      context.device(), _done_rendering, nullptr);
+  }
+}
+
+auto VulkanSurfaceContext::destroy_surface(const VulkanContext& context)
+  -> void {
+  if (_surface != VK_NULL_HANDLE) {
+    vkDestroySurfaceKHR(context.instance(), _surface, nullptr);
+  }
+}
+
+auto VulkanSurfaceContext::destroy_swapchain(const VulkanContext& context)
+  -> void {
+  if (_swapchain != VK_NULL_HANDLE) {
+    context.device_table()->vkDestroySwapchainKHR(
+      context.device(), _swapchain, nullptr);
+  }
+}
+
+auto VulkanSurfaceContext::destroy_swap_contexts(const VulkanContext& context)
+  -> void {
+  auto device = context.device();
+  for (auto& swap_context : _swap_contexts) {
+    auto& attachment = swap_context.attachment;
+    if (attachment.image_view != VK_NULL_HANDLE) {
+      context.device_table()->vkDestroyImageView(
+        device, attachment.image_view, nullptr);
+      attachment.image_view = VK_NULL_HANDLE;
+    }
+  }
 }
 
 } // namespace ripple::glow::backend
