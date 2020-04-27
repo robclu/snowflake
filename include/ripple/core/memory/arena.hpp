@@ -41,6 +41,7 @@ class StackArena {
 
   /// Constructor which takes the size of the arena. This is provided to arenas
   /// have the same interface.
+  /// \param size The size of the arena.
   StackArena(size_t size = 0) {}
 
   //==--- [interface] ------------------------------------------------------==//
@@ -72,7 +73,8 @@ struct HeapArena {
   /// Returns that the allocator does not have a constexpr size.
   static constexpr bool constexpr_size_v = false;
 
-  using Ptr = void*; //!< Pointer type.
+  using Ptr      = void*; //!< Pointer type.
+  using ConstPtr = void*; //!< Const ointer type.
 
   //==--- [construction] ---------------------------------------------------==//
 
@@ -85,13 +87,13 @@ struct HeapArena {
   //==--- [interface] ------------------------------------------------------==//
 
   /// Returns a pointer to the beginning of the arena.
-  [[nodiscard]] auto begin() const -> Ptr {
+  [[nodiscard]] auto begin() const -> ConstPtr {
     return _ptr;
   }
 
   /// Returns a pointer to the end of the arena.
-  [[nodiscard]] auto end() const -> Ptr {
-    return reinterpret_cast<Ptr>(uintptr_t(_ptr) + _size);
+  [[nodiscard]] auto end() const -> ConstPtr {
+    return reinterpret_cast<ConstPtr>(uintptr_t(_ptr) + _size);
   }
 
   /// Returns the size of the arena.
