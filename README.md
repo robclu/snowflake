@@ -1,4 +1,3 @@
-# glow
+# Glow
 
-Glow is Ripple's rendering engine. It has both real-time and offline modes. It
-supports numerous platform, and the backend uses Vulkan and/or CUDA.
+Glow is rendering engine which uses the Vulkan API. It is very much a work in progress, which is being developed in my spare-time.
