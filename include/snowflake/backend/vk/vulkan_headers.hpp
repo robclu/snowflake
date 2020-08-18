@@ -1,8 +1,8 @@
-//==--- glow/backend/vulkan_headers.hpp -------------------- -*- C++ -*- ---==//
+//==--- snwoflake/backend/vulkan_headers.hpp --------------- -*- C++ -*- ---==//
 //
-//                            Ripple - Glow
+//                              Snowflake
 //
-//                      Copyright (c) 2020 Ripple
+//                      Copyright (c) 2020 Rob Clucas
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
@@ -13,10 +13,10 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_BACKEND_VULKAN_VULKAN_HEADERS_HPP
-#define RIPPLE_GLOW_BACKEND_VULKAN_VULKAN_HEADERS_HPP
+#ifndef SNOWFLAKE_BACKEND_VULKAN_VULKAN_HEADERS_HPP
+#define SNOWFLAKE_BACKEND_VULKAN_VULKAN_HEADERS_HPP
 
 #include "volk.h"
 #include <cstdlib>
 
-#endif // RIPPLE_GLOW_BACKEND_VULKAN_VULKAN_HEADERS_HPP
+#endif // SNOWFLAKE_BACKEND_VULKAN_VULKAN_HEADERS_HPP

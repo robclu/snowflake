@@ -1,4 +1,4 @@
-//==--- glow/backend/platform/platform_base.hpp ------------ -*- C++ -*- ---==//
+//==--- snowflake/backend/platform/platform_base.hpp ------- -*- C++ -*- ---==//
 //
 //                              Ripple - Glow
 //
@@ -13,17 +13,17 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_BACKEND_PLATFORM_PLATFORM_BASE_HPP
-#define RIPPLE_GLOW_BACKEND_PLATFORM_PLATFORM_BASE_HPP
+#ifndef SNOWFLAKE_BACKEND_PLATFORM_PLATFORM_BASE_HPP
+#define SNOWFLAKE_BACKEND_PLATFORM_PLATFORM_BASE_HPP
 
 #include "platform_fwd.hpp"
-#include "../vk/vulkan_headers.hpp"
+#include <snowflake/backend/vk/vulkan_headers.hpp>
 #include <ripple/core/util/portability.hpp>
 #include <string>
 #include <type_traits>
 #include <vector>
 
-namespace ripple::glow::backend {
+namespace snowflake::backend {
 
 /// Alias for the type of the extension vector.
 using ExtVector = std::vector<const char*>;
@@ -41,10 +41,13 @@ using ExtVector = std::vector<const char*>;
 /// \tparam Impl The type of the implementation of the interface.
 template <typename Impl>
 class Platform {
+  /// Defines the size type used by the platform.
+  using SizeType = uint32_t;
+
   //==--- [constants] ------------------------------------------------------==//
 
-  static constexpr auto default_w = 1280; //!< Default widht.
-  static constexpr auto default_h = 720;  //!< Default height.
+  static constexpr SizeType default_w = 1280; //!< Default widht.
+  static constexpr SizeType default_h = 720;  //!< Default height.
 
   //==--- [friends] --------------------------------------------------------==//
 
@@ -52,97 +55,79 @@ class Platform {
   friend Impl;
 
   /// Returns a const pointer to the implementation.
-  constexpr auto impl() const -> const Impl* {
+  constexpr auto impl() const noexcept -> const Impl* {
     return static_cast<const Impl*>(this);
   }
 
   /// Returns a pointer to the implementation.
-  constexpr auto impl() -> Impl* {
+  constexpr auto impl() noexcept -> Impl* {
     return static_cast<Impl*>(this);
   }
 
  public:
+  SizeType width  = default_w; //!< Width of the window.
+  SizeType height = default_h; //!< Height of the window
+
   //==--- [interface] ------------------------------------------------------==//
 
   /// Constructor to create a platform with a default size.
-  Platform() = default;
+  Platform() noexcept = default;
 
   /// Constructor for the platform, which sets the \p x and \py dimensions
   /// of the surface for the platform.
   /// \param width  The (width) of the surface  - pixels in the x dimension.
   /// \param height The (height) of the surface - pixels in the y dimension.
-  Platform(uint32_t width, uint32_t height) : _width(width), _height(height) {}
+  Platform(SizeType width, SizeType height) noexcept
+  : width(width), height(height) {}
 
   /// Creates a surface for the platform, and returns it.
   /// \param instance The instance to create the surface for.
   /// \param device   The device to create the surface from.
   auto create_surface(VkInstance instance, VkPhysicalDevice device) const
-    -> VkSurfaceKHR {
+    noexcept -> VkSurfaceKHR {
     return impl()->create_vulkan_surface(instance, device);
   }
 
   /// Gets the vulkan device extensions for the platform.
-  auto device_extensions() const -> ExtVector {
+  auto device_extensions() const noexcept -> ExtVector {
     return impl()->get_device_extensions();
   }
 
   /// Gets the vulkan instance extensions for the platform.
-  auto instance_extensions() const -> ExtVector {
+  auto instance_extensions() const noexcept -> ExtVector {
     return impl()->get_instance_extensions();
   }
 
   /// Returns true if the platform is still alive.
-  auto is_alive() const -> bool {
+  auto is_alive() const noexcept -> bool {
     return impl()->is_alive_impl();
   }
 
   /// Polls the platform for input events, handling any events which happen.
-  auto poll_input() -> void {
+  auto poll_input() noexcept -> void {
     impl()->poll_input_impl();
   }
 
   /// Resizes the platform surface.
-  /// \param width  The width to resize to.
-  /// \param height The height to resize to.
-  auto resize(uint32_t width, uint32_t height) -> void {
-    _width  = width;
-    _height = height;
+  /// \param w  The width to resize to.
+  /// \param h The height to resize to.
+  auto resize(SizeType w, SizeType h) noexcept -> void {
+    width  = w;
+    height = h;
     impl()->resize_impl();
-  }
-
-  /// Returns the width of the platform surface.
-  auto width() const -> uint32_t {
-    return _width;
-  }
-
-  /// Sets the width of the platform surface to \p width.
-  /// \param width The width to set the platform to.
-  auto set_width(uint32_t width) -> void {
-    _width = width;
-  }
-
-  /// Returns the height of the platform surface.
-  auto height() const -> uint32_t {
-    return _height;
-  }
-
-  /// Sets the height of the platform surface  to \p height.
-  /// \param height The height to set the platform to.
-  auto set_height(uint32_t height) -> void {
-    _height = height;
   }
 
   /// Sets the title of the platform.
   /// \param title The title for the platform.
-  auto set_title(const std::string& title) -> void {
+  auto set_title(const char* title) -> void {
     impl()->set_title_impl(title);
   }
 
  private:
-  uint32_t _width  = default_w; //!< Width of the window.
-  uint32_t _height = default_h; //!< Height of the window
+  SizeType width_  = default_w; //!< Width of the window.
+  SizeType height_ = default_h; //!< Height of the window
 };
 
-} // namespace ripple::glow::backend
+} // namespace snowflake::backend
 
-#endif // RIPPLE_GLOW_BACKEND_PLATFORM_PLATFORM_HPP
+#endif // SNOWFLAKE_BACKEND_PLATFORM_PLATFORM_HPP

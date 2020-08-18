@@ -1,6 +1,6 @@
-//==--- glow/src/backend/vk/vulkan_context.cpp ------------- -*- C++ -*- ---==//
+//==--- snowflake/src/backend/vk/vulkan_context.cpp -------- -*- C++ -*- ---==//
 //
-//                            Ripple - Glow
+//                              Snowflake
 //
 //                      Copyright (c) 2020 Ripple
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <ripple/core/log/logger.hpp>
-#include <ripple/glow/backend/vk/vulkan_context.hpp>
+#include <snowflake/backend/vk/vulkan_context.hpp>
+#include <wrench/log/logger.hpp>
 #include <algorithm>
 #include <cstring>
 #include <vector>
@@ -25,7 +25,7 @@
   #include <windows.h>
 #endif
 
-namespace ripple::glow::backend {
+namespace snowflake::backend {
 
 //==--- [debug functions] --------------------------------------------------==//
 
@@ -41,18 +41,18 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_messenger_cb(
   switch (message_severity) {
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: {
       if (message_type == VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
-        log_error("Vulkan validation: {}", p_callback_data->pMessage);
+        wrench::log_error("Vulkan validation: {}", p_callback_data->pMessage);
       } else {
-        log_error("Vulkan other: {}", p_callback_data->pMessage);
+        wrench::log_error("Vulkan other: {}", p_callback_data->pMessage);
       }
       break;
     }
 
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: {
       if (message_type == VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
-        log_warn("Vulkan validation: {}", p_callback_data->pMessage);
+        wrench::log_warn("Vulkan validation: {}", p_callback_data->pMessage);
       } else {
-        log_warn("Vulkan other: {}", p_callback_data->pMessage);
+        wrench::log_warn("Vulkan other: {}", p_callback_data->pMessage);
       }
       break;
     }
@@ -61,9 +61,9 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_messenger_cb(
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: {
       if (message_ype == VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
-        log_info("Vulkan validation: {}", p_callback_data->pMessage);
+        wrench::log_info("Vulkan validation: {}", p_callback_data->pMessage);
       } else {
-        log_info("Vulkan other: {}", p_callback_data->pMessage);
+        wrench::log_info("Vulkan other: {}", p_callback_data->pMessage);
       }
       break;
     }
@@ -83,7 +83,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_messenger_cb(
   if (log_object_names) {
     for (uint32_t i = 0; i < p_callback_data->objectCount; i++) {
       auto* name = p_callback_data->pObjects[i].pObjectName;
-      log_info("Object {0}: {1}", i, name ? name : "N/A");
+      wrench::log_info("Object {0}: {1}", i, name ? name : "N/A");
     }
   }
   return VK_FALSE;
@@ -111,13 +111,13 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug_cb(
   }
 
   if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
-    log_error("Vulkan: {0}: {1}", p_layer_prefix, p_message);
+    wrench::log_error("Vulkan: {0}: {1}", p_layer_prefix, p_message);
   } else if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) {
-    log_warn("Vulkan: {0}: {1}", p_layer_prefix, p_message);
+    wrench::log_warn("Vulkan: {0}: {1}", p_layer_prefix, p_message);
   } else if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) {
-    log_warn("Vulkan performance: {0}: {1}", p_layer_prefix, p_message);
+    wrench::log_warn("Vulkan performance: {0}: {1}", p_layer_prefix, p_message);
   } else {
-    log_info("Vulkan: {0}: {1}", p_layer_prefix, p_message);
+    wrench::log_info("Vulkan: {0}: {1}", p_layer_prefix, p_message);
   }
   return VK_FALSE;
 }
@@ -125,31 +125,35 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug_cb(
 
 //==--- [con/destruction] --------------------------------------------------==//
 
-VulkanContext::~VulkanContext() {
+VulkanContext::~VulkanContext() noexcept {
   destroy();
 }
 
 //==--- [static public] ----------------------------------------------------==//
 
-auto VulkanContext::get_application_info() -> const VkApplicationInfo& {
+auto VulkanContext::get_application_info() noexcept
+  -> const VkApplicationInfo& {
   // clang-format off
   static const VkApplicationInfo info = {
     VK_STRUCTURE_TYPE_APPLICATION_INFO,
     nullptr,
-    "Glow",
+    "Snowflake",
     0,
-    "Glow",
+    "Snowflake",
     0,
     VK_API_VERSION_1_2};
   return info;
   // clang-format on
 }
+using Lock  = wrench::Spinlock;
+using Guard = std::lock_guard<Lock>;
 
-static bool       loader_is_initialzied;
-static std::mutex loader_init_lock;
+static bool loader_is_initialzied;
+static Lock loader_init_lock;
 
-auto VulkanContext::init_loader(PFN_vkGetInstanceProcAddr addr) -> bool {
-  std::lock_guard<std::mutex> guard(loader_init_lock);
+auto VulkanContext::init_loader(PFN_vkGetInstanceProcAddr addr) noexcept
+  -> bool {
+  Guard guard(loader_init_lock);
   if (loader_is_initialzied) {
     return true;
   }
@@ -158,7 +162,7 @@ auto VulkanContext::init_loader(PFN_vkGetInstanceProcAddr addr) -> bool {
 #if !defined(_WIN32)
     static void* module;
     if (!module) {
-      const char* vulkan_path = getenv("GLOW_VULKAN_LIBRARY");
+      const char* vulkan_path = getenv("SNOWFLAKE_VULKAN_LIBRARY");
       if (vulkan_path) {
         module = dlopen(vulkan_path, RTLD_LOCAL | RTLD_LAZY);
       }
@@ -216,12 +220,12 @@ auto VulkanContext::create_instance_and_device(
   uint32_t     num_ins_extensions,
   const char** dev_extensions,
   uint32_t     num_dev_extensions,
-  VkSurfaceKHR surface) -> bool {
+  VkSurfaceKHR surface) noexcept -> bool {
   destroy();
 
   if (!create_instance(ins_extensions, num_ins_extensions)) {
     destroy();
-    log_error("Failed to create vulkan instance!");
+    wrench::log_error("Failed to create vulkan instance!");
     return false;
   }
 
@@ -230,16 +234,16 @@ auto VulkanContext::create_instance_and_device(
 
   if (!created_device) {
     destroy();
-    log_error("Failed to create vulkan device!");
+    wrench::log_error("Failed to create vulkan device!");
     return false;
   }
 
-  _destroyed = false;
+  destroyed_ = false;
   return true;
 }
 
 auto VulkanContext::create_instance(
-  const char** ins_extensions, uint32_t num_extensions) -> bool {
+  const char** ins_extensions, uint32_t num_extensions) noexcept -> bool {
   auto                 app_info = get_application_info();
   VkInstanceCreateInfo info     = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
   info.pApplicationInfo         = &get_application_info();
@@ -280,7 +284,7 @@ auto VulkanContext::create_instance(
   // Look for the requested instance extensions:
   for (uint32_t i = 0; i < num_extensions; i++) {
     if (!has_extension(ins_extensions[i])) {
-      log_error("Instance extension not found: {}", ins_extensions[i]);
+      wrench::log_error("Instance extension not found: {}", ins_extensions[i]);
       return false;
     }
   }
@@ -309,17 +313,17 @@ auto VulkanContext::create_instance(
   if (has_extension(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME)) {
     instance_exts.push_back(
       VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    _supports_phy_dev_props_2 = true;
+    supports_phy_dev_props_2_ = true;
   }
 
   if (
-    _supports_phy_dev_props_2 &&
+    supports_phy_dev_props_2_ &&
     has_extension(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME) &&
     has_extension(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME)) {
     instance_exts.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
     instance_exts.push_back(
       VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
-    _supports_external = true;
+    supports_external_ = true;
   }
 
   const auto ins_ext_end = ins_extensions + num_extensions;
@@ -332,7 +336,7 @@ auto VulkanContext::create_instance(
     has_surface_extension &&
     has_extension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
     instance_exts.push_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
-    _supports_surface_caps_2 = true;
+    supports_surface_caps_2_ = true;
   }
 
 #ifdef VALIDATION_ENABLED
@@ -348,10 +352,10 @@ auto VulkanContext::create_instance(
 
   if (has_layer("VK_LAYER_KHRONOS_validation")) {
     instance_layers.push_back("VK_LAYER_KHRONOS_validation");
-    log_info("Enabling VK_LAYER_KHRONOS_validation.");
+    wrench::log_info("Enabling VK_LAYER_KHRONOS_validation.");
   } else if (has_layer("VK_LAYER_LUNARG_standard_validation")) {
     instance_layers.push_back("VK_LAYER_LUNARG_standard_validation");
-    log_info("Enabling VK_LAYER_LUNARG_standard_validation.");
+    wrench::log_info("Enabling VK_LAYER_LUNARG_standard_validation.");
   }
 #endif
 
@@ -365,19 +369,19 @@ auto VulkanContext::create_instance(
                                                      : instance_layers.data();
 
   for (auto* ext_name : instance_exts) {
-    log_info("Enabling instance extension: {0}", ext_name);
+    wrench::log_info("Enabling instance extension: {0}", ext_name);
   }
 
-  if (vkCreateInstance(&info, nullptr, &_instance) != VK_SUCCESS) {
+  if (vkCreateInstance(&info, nullptr, &instance_) != VK_SUCCESS) {
     return false;
   }
 
-  volkLoadInstance(_instance);
+  volkLoadInstance(instance_);
 
 #ifdef VULKAN_DEBUG
   // Check debug utils and setup callback:
   if (has_extension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
-    _supports_debug_utils                         = true;
+    supports_debug_utils_                         = true;
     VkDebugUtilsMessengerCreateInfoEXT debug_info = {
       VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
     debug_info.messageSeverity =
@@ -392,7 +396,7 @@ auto VulkanContext::create_instance(
     debug_info.pUserData = this;
 
     vkCreateDebugUtilsMessengerEXT(
-      _instance, &debug_info, nullptr, &_debug_messenger);
+      instance_, &debug_info, nullptr, &_debug_messenger);
   } else if (has_extension(VK_EXT_DEBUG_REPORT_EXTENSION_NAME)) {
     VkDebugReportCallbackCreateInfoEXT debug_info = {
       VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT};
@@ -402,7 +406,7 @@ auto VulkanContext::create_instance(
     debug_info.pfnCallback = vulkan_debug_cb;
     debug_info.pUserData   = this;
     vkCreateDebugReportCallbackEXT(
-      _instance, &debug_info, nullptr, &_debug_callback);
+      instance_, &debug_info, nullptr, &debug_callback_);
   }
 #endif
 
@@ -412,32 +416,32 @@ auto VulkanContext::create_instance(
 //==--- [private] ----------------------------------------------------------==//
 
 auto VulkanContext::select_queue_families(
-  const std::vector<VkQueueFamilyProperties>& queue_props) -> void {
+  const std::vector<VkQueueFamilyProperties>& queue_props) noexcept -> void {
   try_select_separate_queue_families(queue_props);
 
-  const auto gfx_q_count = queue_props[_graphics_queue_family].queueCount - 1;
+  const auto gfx_q_count = queue_props[graphics_queue_family_].queueCount - 1;
   // Couldnt find separate graphics and compute:
-  if (_compute_queue_family == VK_QUEUE_FAMILY_IGNORED) {
-    _compute_queue_family = _graphics_queue_family;
-    _compute_queue_index  = std::min(gfx_q_count, _universal_queue_index);
-    _universal_queue_index++;
+  if (compute_queue_family_ == VK_QUEUE_FAMILY_IGNORED) {
+    compute_queue_family_ = graphics_queue_family_;
+    compute_queue_index_  = std::min(gfx_q_count, universal_queue_index_);
+    universal_queue_index_++;
   }
 
   // Couldn't find separate graphics, compute, transfer, or separate graphics,
   // transfer:
-  const auto& compute_queue_props = queue_props[_compute_queue_family];
-  if (_transfer_queue_family == VK_QUEUE_FAMILY_IGNORED) {
-    _transfer_queue_family = _graphics_queue_family;
-    _transfer_queue_index  = std::min(gfx_q_count, _universal_queue_index);
-    _universal_queue_index++;
-  } else if (_transfer_queue_family == _compute_queue_family) {
-    _transfer_queue_index =
-      std::min(queue_props[_compute_queue_family].queueCount - 1, 1u);
+  const auto& compute_queue_props = queue_props[compute_queue_family_];
+  if (transfer_queue_family_ == VK_QUEUE_FAMILY_IGNORED) {
+    transfer_queue_family_ = graphics_queue_family_;
+    transfer_queue_index_  = std::min(gfx_q_count, universal_queue_index_);
+    universal_queue_index_++;
+  } else if (transfer_queue_family_ == compute_queue_family_) {
+    transfer_queue_index_ =
+      std::min(queue_props[compute_queue_family_].queueCount - 1, 1u);
   }
 }
 
 auto VulkanContext::try_select_separate_queue_families(
-  const std::vector<VkQueueFamilyProperties>& queue_props) -> void {
+  const std::vector<VkQueueFamilyProperties>& queue_props) noexcept -> void {
   const auto   num_queues         = queue_props.size();
   VkQueueFlags required           = VK_QUEUE_COMPUTE_BIT;
   const auto   has_required_flags = [&](const auto& props) -> bool {
@@ -446,8 +450,8 @@ auto VulkanContext::try_select_separate_queue_families(
 
   // Try and find compute queue with different index to graphics queue:
   for (unsigned i = 0; i < num_queues; i++) {
-    if (i != _graphics_queue_family && has_required_flags(queue_props[i])) {
-      _compute_queue_family = i;
+    if (i != graphics_queue_family_ && has_required_flags(queue_props[i])) {
+      compute_queue_family_ = i;
       break;
     }
   }
@@ -456,9 +460,9 @@ auto VulkanContext::try_select_separate_queue_families(
   required = VK_QUEUE_TRANSFER_BIT;
   for (unsigned i = 0; i < num_queues; i++) {
     if (
-      i != _graphics_queue_family && i != _compute_queue_family &&
+      i != graphics_queue_family_ && i != compute_queue_family_ &&
       has_required_flags(queue_props[i])) {
-      _transfer_queue_family = i;
+      transfer_queue_family_ = i;
       return;
     }
   }
@@ -466,31 +470,32 @@ auto VulkanContext::try_select_separate_queue_families(
   // Failed to find separate transfer queue from both graphics and compute, see
   // if we can find one separate from just graphics:
   for (unsigned i = 0; i < num_queues; i++) {
-    if (i != _graphics_queue_family && has_required_flags(queue_props[i])) {
-      _transfer_queue_family = i;
+    if (i != graphics_queue_family_ && has_required_flags(queue_props[i])) {
+      transfer_queue_family_ = i;
       return;
     }
   }
 }
 
-auto VulkanContext::select_physical_device(VkSurfaceKHR surface) -> bool {
+auto VulkanContext::select_physical_device(VkSurfaceKHR surface) noexcept
+  -> bool {
   const auto success = [](const auto result) -> bool {
     return result == VK_SUCCESS;
   };
 
   uint32_t dev_count = 0;
-  if (!success(vkEnumeratePhysicalDevices(_instance, &dev_count, nullptr))) {
+  if (!success(vkEnumeratePhysicalDevices(instance_, &dev_count, nullptr))) {
     return false;
   }
 
   if (dev_count == 0) {
-    log_error("No physical devices found");
+    wrench::log_error("No physical devices found");
     return false;
   }
 
   auto devices = std::vector<VkPhysicalDevice>(dev_count);
   if (!success(
-        vkEnumeratePhysicalDevices(_instance, &dev_count, devices.data()))) {
+        vkEnumeratePhysicalDevices(instance_, &dev_count, devices.data()))) {
     return false;
   }
 
@@ -503,37 +508,37 @@ auto VulkanContext::select_physical_device(VkSurfaceKHR surface) -> bool {
   };
 
   for (auto dev : devices) {
-    _phy_dev = dev;
-    vkGetPhysicalDeviceProperties(_phy_dev, &_dev_props);
+    phy_dev_ = dev;
+    vkGetPhysicalDeviceProperties(phy_dev_, &dev_props_);
 
     uint32_t queue_count;
-    vkGetPhysicalDeviceQueueFamilyProperties(_phy_dev, &queue_count, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(phy_dev_, &queue_count, nullptr);
     if (queue_count == 0) {
       continue;
     }
     auto queue_props = std::vector<VkQueueFamilyProperties>(queue_count);
     vkGetPhysicalDeviceQueueFamilyProperties(
-      _phy_dev, &queue_count, queue_props.data());
+      phy_dev_, &queue_count, queue_props.data());
 
     for (unsigned i = 0; i < queue_count; ++i) {
       VkBool32 surf_supported = (surface == VK_NULL_HANDLE);
       if (surface != VK_NULL_HANDLE) {
         vkGetPhysicalDeviceSurfaceSupportKHR(
-          _phy_dev, i, surface, &surf_supported);
+          phy_dev_, i, surface, &surf_supported);
       }
 
       if (surf_supported && has_required_flags(queue_props[i])) {
-        _graphics_queue_family = i;
+        graphics_queue_family_ = i;
 
         select_queue_families(queue_props);
 
         // Set the memory properties for the device.
-        vkGetPhysicalDeviceMemoryProperties(_phy_dev, &_dev_mem_props);
+        vkGetPhysicalDeviceMemoryProperties(phy_dev_, &dev_mem_props_);
 
         if (
-          _dev_props.apiVersion >= VK_VERSION_1_1 &&
+          dev_props_.apiVersion >= VK_VERSION_1_1 &&
           volkGetInstanceVersion() >= VK_VERSION_1_1) {
-          _supports_vulkan_11 = true;
+          supports_vulkan_11_ = true;
         }
 
         return true;
@@ -544,13 +549,14 @@ auto VulkanContext::select_physical_device(VkSurfaceKHR surface) -> bool {
 }
 
 auto VulkanContext::validate_extensions(
-  const char** dev_req_extensions, uint32_t num_req_extensions) -> bool {
+  const char** dev_req_extensions, uint32_t num_req_extensions) noexcept
+  -> bool {
   uint32_t ext_count = 0;
-  vkEnumerateDeviceExtensionProperties(_phy_dev, nullptr, &ext_count, nullptr);
+  vkEnumerateDeviceExtensionProperties(phy_dev_, nullptr, &ext_count, nullptr);
   auto queried_exts = std::vector<VkExtensionProperties>(ext_count);
   if (ext_count) {
     vkEnumerateDeviceExtensionProperties(
-      _phy_dev, nullptr, &ext_count, queried_exts.data());
+      phy_dev_, nullptr, &ext_count, queried_exts.data());
   }
 
   const auto has_extension = [&](const char* name) -> bool {
@@ -565,7 +571,8 @@ auto VulkanContext::validate_extensions(
 
   for (uint32_t i = 0; i < num_req_extensions; i++) {
     if (!has_extension(dev_req_extensions[i])) {
-      log_error("Device extension not found: {}", dev_req_extensions[i]);
+      wrench::log_error(
+        "Device extension not found: {}", dev_req_extensions[i]);
       return false;
     }
   }
@@ -573,13 +580,13 @@ auto VulkanContext::validate_extensions(
 }
 
 auto VulkanContext::validate_layers(
-  const char** dev_req_layers, uint32_t num_req_layers) -> bool {
+  const char** dev_req_layers, uint32_t num_req_layers) noexcept -> bool {
   uint32_t layer_count = 0;
-  vkEnumerateDeviceLayerProperties(_phy_dev, &layer_count, nullptr);
+  vkEnumerateDeviceLayerProperties(phy_dev_, &layer_count, nullptr);
   auto queried_layers = std::vector<VkLayerProperties>(layer_count);
   if (layer_count) {
     vkEnumerateDeviceLayerProperties(
-      _phy_dev, &layer_count, queried_layers.data());
+      phy_dev_, &layer_count, queried_layers.data());
   }
 
   const auto has_layer = [&](const char* name) -> bool {
@@ -594,55 +601,55 @@ auto VulkanContext::validate_layers(
 
   for (uint32_t i = 0; i < num_req_layers; i++) {
     if (!has_layer(dev_req_layers[i])) {
-      log_error("Device layer not found: {}", dev_req_layers[i]);
+      wrench::log_error("Device layer not found: {}", dev_req_layers[i]);
       return false;
     }
   }
   return true;
 }
 
-auto VulkanContext::create_queue_info() const
+auto VulkanContext::create_queue_info() const noexcept
   -> std::tuple<std::vector<VkDeviceQueueCreateInfo>, std::vector<float>> {
   uint32_t queue_count;
-  vkGetPhysicalDeviceQueueFamilyProperties(_phy_dev, &queue_count, nullptr);
+  vkGetPhysicalDeviceQueueFamilyProperties(phy_dev_, &queue_count, nullptr);
   auto queue_props = std::vector<VkQueueFamilyProperties>(queue_count);
   vkGetPhysicalDeviceQueueFamilyProperties(
-    _phy_dev, &queue_count, queue_props.data());
+    phy_dev_, &queue_count, queue_props.data());
 
   // clang-format off
   auto queue_info = std::vector<VkDeviceQueueCreateInfo>();
   auto prio       = std::vector<float>{
-    VulkanContext::graphics_queue_priority_v,
-    VulkanContext::compute_queue_priority_v,
-    VulkanContext::transfer_queue_priority_v};
+    VulkanContext::graphics_queue_priority,
+    VulkanContext::compute_queue_priority,
+    VulkanContext::transfer_queue_priority};
   // clang-format on
 
   // Definitely have a queue for graphics:
   auto& q_info            = queue_info.emplace_back();
   q_info.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-  q_info.queueFamilyIndex = _graphics_queue_family;
+  q_info.queueFamilyIndex = graphics_queue_family_;
   q_info.queueCount       = std::min(
-    _universal_queue_index, queue_props[_graphics_queue_family].queueCount);
+    universal_queue_index_, queue_props[graphics_queue_family_].queueCount);
   q_info.pQueuePriorities = &prio[0];
 
   // If there is a separate compute queue, add it:
-  if (_compute_queue_family != _graphics_queue_family) {
+  if (compute_queue_family_ != graphics_queue_family_) {
     auto& q_info_c            = queue_info.emplace_back();
     q_info_c.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    q_info_c.queueFamilyIndex = _compute_queue_family;
+    q_info_c.queueFamilyIndex = compute_queue_family_;
     q_info_c.queueCount       = std::min(
-      _transfer_queue_family == _compute_queue_family ? 2u : 1u,
-      queue_props[_compute_queue_family].queueCount);
+      transfer_queue_family_ == compute_queue_family_ ? 2u : 1u,
+      queue_props[compute_queue_family_].queueCount);
     q_info_c.pQueuePriorities = &prio[1];
   }
 
   // If there is also a separate transfer queue, add that:
   if (
-    _transfer_queue_family != _graphics_queue_family &&
-    _transfer_queue_family != _compute_queue_family) {
+    transfer_queue_family_ != graphics_queue_family_ &&
+    transfer_queue_family_ != compute_queue_family_) {
     auto& q_info_t            = queue_info.emplace_back();
     q_info_t.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    q_info_t.queueFamilyIndex = _transfer_queue_family;
+    q_info_t.queueFamilyIndex = transfer_queue_family_;
     q_info_t.queueCount       = 1;
     q_info_t.pQueuePriorities = &prio[2];
   }
@@ -655,26 +662,26 @@ auto VulkanContext::create_device(
   const char**     dev_req_extensions,
   uint32_t         num_req_extensions,
   const char**     dev_req_layers,
-  uint32_t         num_req_layers) -> bool {
-  _phy_dev = dev;
+  uint32_t         num_req_layers) noexcept -> bool {
+  phy_dev_ = dev;
 
   //==--- [find a device] --------------------------------------------------==//
 
-  if (_phy_dev == VK_NULL_HANDLE) {
+  if (phy_dev_ == VK_NULL_HANDLE) {
     if (!select_physical_device(surface)) {
-      log_error("Failed to find suitable physical device.");
+      wrench::log_error("Failed to find suitable physical device.");
       return false;
     }
   }
 
-  log_info(
+  wrench::log_info(
     "Selected physical device: {0} (vendor: {1:x}, device: {2:x}, "
     " api: {3:x}, driver: {4:x})",
-    _dev_props.deviceName,
-    _dev_props.vendorID,
-    _dev_props.deviceID,
-    _dev_props.apiVersion,
-    _dev_props.driverVersion);
+    dev_props_.deviceName,
+    dev_props_.vendorID,
+    dev_props_.deviceID,
+    dev_props_.apiVersion,
+    dev_props_.driverVersion);
 
   //==--- [validate] -------------------------------------------------------==//
 
@@ -693,19 +700,19 @@ auto VulkanContext::create_device(
 
   //==--- [get phy dev features] -------------------------------------------==//
 
-  _dev_features = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR};
-  if (_supports_vulkan_11) {
-    vkGetPhysicalDeviceFeatures2(_phy_dev, &_dev_features);
-  } else if (_supports_phy_dev_props_2) {
-    vkGetPhysicalDeviceFeatures2KHR(_phy_dev, &_dev_features);
+  dev_features_ = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR};
+  if (supports_vulkan_11_) {
+    vkGetPhysicalDeviceFeatures2(phy_dev_, &dev_features_);
+  } else if (supports_phy_dev_props_2_) {
+    vkGetPhysicalDeviceFeatures2KHR(phy_dev_, &dev_features_);
   } else {
-    vkGetPhysicalDeviceFeatures(_phy_dev, &_dev_features.features);
+    vkGetPhysicalDeviceFeatures(phy_dev_, &dev_features_.features);
   }
 
-  if (_supports_phy_dev_props_2) {
-    device_info.pNext = &_dev_features;
+  if (supports_phy_dev_props_2_) {
+    device_info.pNext = &dev_features_;
   } else {
-    device_info.pEnabledFeatures = &_dev_features.features;
+    device_info.pEnabledFeatures = &dev_features_.features;
   }
 
   //==--- [create extensions & layers] -------------------------------------==//
@@ -732,59 +739,59 @@ auto VulkanContext::create_device(
   // clang-format on
 
   for (auto* enabled_extension : enabled_extensions) {
-    log_info("Enabling device extension: {}", enabled_extension);
+    wrench::log_info("Enabling device extension: {}", enabled_extension);
   }
   for (auto* enabled_layer : enabled_layers) {
-    log_info("Enabling device layer: {}", enabled_layer);
+    wrench::log_info("Enabling device layer: {}", enabled_layer);
   }
 
   //==--- [create logical device] ------------------------------------------==//
 
-  if (vkCreateDevice(_phy_dev, &device_info, nullptr, &_device) != VK_SUCCESS) {
+  if (vkCreateDevice(phy_dev_, &device_info, nullptr, &device_) != VK_SUCCESS) {
     return false;
   }
 
-  volkLoadDeviceTable(&_device_table, _device);
+  volkLoadDeviceTable(&device_table_, device_);
 
-  _device_table.vkGetDeviceQueue(
-    _device, _graphics_queue_family, _graphics_queue_index, &_graphics_queue);
-  _device_table.vkGetDeviceQueue(
-    _device, _compute_queue_family, _compute_queue_index, &_compute_queue);
-  _device_table.vkGetDeviceQueue(
-    _device, _transfer_queue_family, _transfer_queue_index, &_transfer_queue);
+  device_table_.vkGetDeviceQueue(
+    device_, graphics_queue_family_, graphics_queue_index_, &graphics_queue_);
+  device_table_.vkGetDeviceQueue(
+    device_, compute_queue_family_, compute_queue_index_, &compute_queue_);
+  device_table_.vkGetDeviceQueue(
+    device_, transfer_queue_family_, transfer_queue_index_, &transfer_queue_);
 
   return true;
 }
 
-auto VulkanContext::destroy() -> void {
-  if (_destroyed) {
+auto VulkanContext::destroy() noexcept -> void {
+  if (destroyed_) {
     return;
   }
 
-  if (_device != VK_NULL_HANDLE) {
-    _device_table.vkDeviceWaitIdle(_device);
+  if (device_ != VK_NULL_HANDLE) {
+    device_table_.vkDeviceWaitIdle(device_);
   }
 
 #ifdef VULKAN_DEBUG
-  if (_debug_callback) {
-    vkDestroyDebugReportCallbackEXT(_instance, _debug_callback, nullptr);
+  if (debug_callback_) {
+    vkDestroyDebugReportCallbackEXT(instance_, debug_callback_, nullptr);
   }
-  if (_debug_messenger) {
-    vkDestroyDebugUtilsMessengerEXT(_instance, _debug_messenger, nullptr);
+  if (debug_messenger_) {
+    vkDestroyDebugUtilsMessengerEXT(instance_, debug_messenger_, nullptr);
   }
-  _debug_callback  = VK_NULL_HANDLE;
-  _debug_messenger = VK_NULL_HANDLE;
+  debug_callback_  = VK_NULL_HANDLE;
+  debug_messenger_ = VK_NULL_HANDLE;
 #endif
 
-  if (_device != VK_NULL_HANDLE) {
-    _device_table.vkDestroyDevice(_device, nullptr);
-    _device = VK_NULL_HANDLE;
+  if (device_ != VK_NULL_HANDLE) {
+    device_table_.vkDestroyDevice(device_, nullptr);
+    device_ = VK_NULL_HANDLE;
   }
-  if (_instance != VK_NULL_HANDLE) {
-    vkDestroyInstance(_instance, nullptr);
-    _device = VK_NULL_HANDLE;
+  if (instance_ != VK_NULL_HANDLE) {
+    vkDestroyInstance(instance_, nullptr);
+    device_ = VK_NULL_HANDLE;
   }
-  _destroyed = true;
+  destroyed_ = true;
 }
 
-} // namespace ripple::glow::backend
+} // namespace snowflake::backend

@@ -13,13 +13,13 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_BACKEND_VULKAN_CONTEXT_HPP
-#define RIPPLE_GLOW_BACKEND_VULKAN_CONTEXT_HPP
+#ifndef SNOWFLAKE_BACKEND_VULKAN_CONTEXT_HPP
+#define SNOWFLAKE_BACKEND_VULKAN_CONTEXT_HPP
 
 #include "vulkan_headers.hpp"
 #include <tuple>
 
-namespace ripple::glow::backend {
+namespace snowflake::backend {
 
 //==--- [forward declarations] ---------------------------------------------==//
 
@@ -47,7 +47,7 @@ class VulkanContext {
   // clang-format off
 
   /// Default constructor for the constext.
-  VulkanContext() = default;
+  VulkanContext() noexcept = default;
 
   /// Deleted copy construction, since only one context is allowed.
   VulkanContext(const VulkanContext&) = delete;
@@ -56,12 +56,12 @@ class VulkanContext {
   VulkanContext(VulkanContext&&) noexcept = default;
 
   /// Destructor to clean up the resources.
-  ~VulkanContext();
+  ~VulkanContext() noexcept;
 
   /// Destroys the context. This is provided to allow explicit control of
   /// destroying the context. If this is not called, the destructor will clean
   /// up the context.
-  auto destroy() -> void;
+  auto destroy() noexcept -> void;
 
   // clang-format on
 
@@ -78,10 +78,10 @@ class VulkanContext {
   /// Initializes the vulkan loader, using the loader at \p addr, returning true
   /// if it succeeds.
   /// \param addr The address of the loader function.
-  static auto init_loader(PFN_vkGetInstanceProcAddr addr) -> bool;
+  static auto init_loader(PFN_vkGetInstanceProcAddr addr) noexcept -> bool;
 
   /// Gets the application information for vulkan.
-  static auto get_application_info() -> const VkApplicationInfo&;
+  static auto get_application_info() noexcept -> const VkApplicationInfo&;
 
   //==--- [interface] ------------------------------------------------------==//
 
@@ -98,59 +98,59 @@ class VulkanContext {
     uint32_t     num_ins_extensions,
     const char** dev_extensions,
     uint32_t     num_dev_extesions,
-    VkSurfaceKHR surface = VK_NULL_HANDLE) -> bool;
+    VkSurfaceKHR surface = VK_NULL_HANDLE) noexcept -> bool;
 
   /// Returns the vulkan instance.
-  auto instance() const -> VkInstance {
-    return _instance;
+  auto instance() const noexcept -> VkInstance {
+    return instance_;
   }
 
   /// Returns the vulkan physical device.
-  auto physical_device() const -> VkPhysicalDevice {
-    return _phy_dev;
+  auto physical_device() const noexcept -> VkPhysicalDevice {
+    return phy_dev_;
   }
 
   /// Returns the logical device for the context.
-  auto device() const -> VkDevice {
-    return _device;
+  auto device() const noexcept -> VkDevice {
+    return device_;
   }
 
   /// Returns a pointer to the device table for the instance.
-  auto device_table() const -> const VolkDeviceTable* {
-    return &_device_table;
+  auto device_table() const noexcept -> const VolkDeviceTable* {
+    return &device_table_;
   }
 
   /// Returns true if surface capabilities 2 are supported.
-  auto supports_surface_caps_2() const -> bool {
-    return _supports_surface_caps_2;
+  auto supports_surface_caps_2() const noexcept -> bool {
+    return supports_surface_caps_2_;
   }
 
   //==--- [queue interface] ------------------------------------------------==//
 
   /// Returns the index of the graphics queue family.
-  auto graphics_queue_family_index() const -> uint32_t {
-    return _graphics_queue_index;
+  auto graphics_queue_family_index() const noexcept -> uint32_t {
+    return graphics_queue_index_;
   }
   /// Returns the index of the compute queue family.
-  auto compute_queue_family_index() const -> uint32_t {
-    return _compute_queue_index;
+  auto compute_queue_family_index() const noexcept -> uint32_t {
+    return compute_queue_index_;
   }
   /// Returns the index of the transfer queue family.
-  auto transfer_queue_family_index() const -> uint32_t {
-    return _transfer_queue_index;
+  auto transfer_queue_family_index() const noexcept -> uint32_t {
+    return transfer_queue_index_;
   }
 
   /// Returns the graphics queue.
-  auto graphics_queue() const -> VkQueue {
-    return _graphics_queue;
+  auto graphics_queue() const noexcept -> VkQueue {
+    return graphics_queue_;
   }
   /// Returns the compute queue.
-  auto compute_queue() const -> VkQueue {
-    return _compute_queue;
+  auto compute_queue() const noexcept -> VkQueue {
+    return compute_queue_;
   }
   /// Returns the transfer queue.
-  auto transfer_queue() const -> VkQueue {
-    return _transfer_queue;
+  auto transfer_queue() const noexcept -> VkQueue {
+    return transfer_queue_;
   }
 
  private:
@@ -158,56 +158,56 @@ class VulkanContext {
 
   // clang-format off
   /// Priority for teh graphics queue.
-  static constexpr float graphics_queue_priority_v = 0.5f;
+  static constexpr float graphics_queue_priority = 0.5f;
   /// Priority for the compute queue.
-  static constexpr float compute_queue_priority_v  = 1.0f;
+  static constexpr float compute_queue_priority  = 1.0f;
   /// Priority for the transfer queue.
-  static constexpr float transfer_queue_priority_v = 1.0f;
+  static constexpr float transfer_queue_priority = 1.0f;
 
   //==--- [members] --------------------------------------------------------==//
 
-  VkDevice         _device   = VK_NULL_HANDLE; //!< Vulkan device.
-  VkInstance       _instance = VK_NULL_HANDLE; //!< Vulkan instance.
-  VkPhysicalDevice _phy_dev  = VK_NULL_HANDLE; //!< Physical device.
+  VkDevice         device_   = VK_NULL_HANDLE; //!< Vulkan device.
+  VkInstance       instance_ = VK_NULL_HANDLE; //!< Vulkan instance.
+  VkPhysicalDevice phy_dev_  = VK_NULL_HANDLE; //!< Physical device.
 
   /// Device table for vulkan functions.
-  VolkDeviceTable _device_table;
+  VolkDeviceTable device_table_;
 
-  VkPhysicalDeviceProperties       _dev_props     = {}; //!< Dev props.
-  VkPhysicalDeviceFeatures2KHR     _dev_features  = {}; //!< Dev features.
-  VkPhysicalDeviceMemoryProperties _dev_mem_props = {}; //!< Dev mem props.
+  VkPhysicalDeviceProperties       dev_props_     = {}; //!< Dev props.
+  VkPhysicalDeviceFeatures2KHR     dev_features_  = {}; //!< Dev features.
+  VkPhysicalDeviceMemoryProperties dev_mem_props_ = {}; //!< Dev mem props.
 
-  VkQueue _graphics_queue = VK_NULL_HANDLE; //!< Queue for graphics.
-  VkQueue _compute_queue  = VK_NULL_HANDLE; //!< Queue for compute.
-  VkQueue _transfer_queue = VK_NULL_HANDLE; //!< Queue for transfer.
+  VkQueue graphics_queue_ = VK_NULL_HANDLE; //!< Queue for graphics.
+  VkQueue compute_queue_  = VK_NULL_HANDLE; //!< Queue for compute.
+  VkQueue transfer_queue_ = VK_NULL_HANDLE; //!< Queue for transfer.
 
   // clang-format off
   /// Graphics queue family index.
-  uint32_t _graphics_queue_family = VK_QUEUE_FAMILY_IGNORED;
+  uint32_t graphics_queue_family_ = VK_QUEUE_FAMILY_IGNORED;
   /// Compute queue family index.
-  uint32_t _compute_queue_family  = VK_QUEUE_FAMILY_IGNORED;
+  uint32_t compute_queue_family_  = VK_QUEUE_FAMILY_IGNORED;
   /// Transfer queue family index.
-  uint32_t _transfer_queue_family = VK_QUEUE_FAMILY_IGNORED;
+  uint32_t transfer_queue_family_ = VK_QUEUE_FAMILY_IGNORED;
   // clang-format on
 
-  uint32_t _graphics_queue_index  = 0; //!< Index of the graphics queue.
-  uint32_t _compute_queue_index   = 0; //!< Index of the compute queue.
-  uint32_t _transfer_queue_index  = 0; //!< Index of the transfer queue.
-  unsigned _universal_queue_index = 1; //!< Index of a universal queue.
+  uint32_t graphics_queue_index_  = 0; //!< Index of the graphics queue.
+  uint32_t compute_queue_index_   = 0; //!< Index of the compute queue.
+  uint32_t transfer_queue_index_  = 0; //!< Index of the transfer queue.
+  unsigned universal_queue_index_ = 1; //!< Index of a universal queue.
 
-  bool _supports_vulkan_11       = false; //!< Supports VK >= 1.1
-  bool _supports_surface_caps_2  = false; //!< Supports surf caps 2.
-  bool _supports_phy_dev_props_2 = false; //!< Supports dev props 2.
-  bool _supports_external        = false; //!< Supports external props.
-  bool _destroyed                = false; //!< If the context is destroyed.
+  bool supports_vulkan_11_       = false; //!< Supports VK >= 1.1
+  bool supports_surface_caps_2_  = false; //!< Supports surf caps 2.
+  bool supports_phy_dev_props_2_ = false; //!< Supports dev props 2.
+  bool supports_external_        = false; //!< Supports external props.
+  bool destroyed_                = false; //!< If the context is destroyed.
 
 #ifdef VULKAN_DEBUG
-  bool _supports_debug_utils = false; //!< Supports debug utils.
+  bool supports_debug_utils_ = false; //!< Supports debug utils.
   // clang-format off
   /// Callback for debugging.
-  VkDebugReportCallbackEXT _debug_callback  = VK_NULL_HANDLE;
+  VkDebugReportCallbackEXT debug_callback_  = VK_NULL_HANDLE;
   /// Messenger for debugging.
-  VkDebugUtilsMessengerEXT _debug_messenger = VK_NULL_HANDLE;
+  VkDebugUtilsMessengerEXT debug_messenger_ = VK_NULL_HANDLE;
     // clang-format on
 #endif
 
@@ -227,7 +227,7 @@ class VulkanContext {
     const char**     dev_extesions,
     uint32_t         num_extensions,
     const char**     dev_layers,
-    uint32_t         num_layers) -> bool;
+    uint32_t         num_layers) noexcept -> bool;
 
   /// Creates the vulkan instance with \p ins_extensions extensions and \p
   /// num_extensions number of extensions. Returns false if the instance could
@@ -235,18 +235,19 @@ class VulkanContext {
   /// \param ins_extensions The instance extensions.
   /// \param num_extensions The number of extensions.
   auto
-  create_instance(const char** ins_extensions, uint32_t num_extension) -> bool;
+  create_instance(const char** ins_extensions, uint32_t num_extension) noexcept
+    -> bool;
 
   /// Creates the queue information for device creation, returning a vector of
   /// filled VkDeviceQueueCreateInfo for each queue, and a vector of proritities
   /// for each of the queues. Since the VkDeviceQueueCreateInfo's in the vector
   /// refere to the priorities in the second vector, the second vector needs to
   /// be kept around until the device is created.
-  auto create_queue_info() const
+  auto create_queue_info() const noexcept
     -> std::tuple<std::vector<VkDeviceQueueCreateInfo>, std::vector<float>>;
 
   /// Returns the flags required for the device.
-  auto required_flags() const -> VkQueueFlags {
+  auto required_flags() const noexcept -> VkQueueFlags {
     return VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
   }
 
@@ -260,16 +261,15 @@ class VulkanContext {
   ///         - _graphics_queue_family is set to the index of the gfx queue
   ///
   /// \param surface The surface to provide support for.
-  auto select_physical_device(VkSurfaceKHR surface) -> bool;
+  auto select_physical_device(VkSurfaceKHR surface) noexcept -> bool;
 
   /// Selects all queue families. This first tries to select separate queue
   /// families, and then ensures that all queue families have been selected, and
   /// sets the values of the indices of the queues in the queue families.
   ///
   /// \param queue_props A vector of queue properties.
-  auto
-  select_queue_families(const std::vector<VkQueueFamilyProperties>& queue_props)
-    -> void;
+  auto select_queue_families(
+    const std::vector<VkQueueFamilyProperties>& queue_props) noexcept -> void;
 
   /// Finds the indices for the queues.
 
@@ -278,7 +278,7 @@ class VulkanContext {
   ///
   /// \param queue_props A vector of queue properties.
   auto try_select_separate_queue_families(
-    const std::vector<VkQueueFamilyProperties>& queue_props) -> void;
+    const std::vector<VkQueueFamilyProperties>& queue_props) noexcept -> void;
 
   /// Checks that all the queue families have valid indices, and sets the
 
@@ -292,8 +292,8 @@ class VulkanContext {
   ///
   /// \param dev_extensions The required device extensions.
   /// \param num_extensions The number of extensions.
-  auto validate_extensions(const char** dev_extensions, uint32_t num_extensions)
-    -> bool;
+  auto validate_extensions(
+    const char** dev_extensions, uint32_t num_extensions) noexcept -> bool;
 
   /// Validates the \p dev_layers against those available for the context
   /// physical device.
@@ -305,9 +305,10 @@ class VulkanContext {
   ///
   /// \param dev_layers The required device layers.
   /// \param num_layers The number of layers.
-  auto validate_layers(const char** dev_layers, uint32_t num_layers) -> bool;
+  auto validate_layers(const char** dev_layers, uint32_t num_layers) noexcept
+    -> bool;
 };
 
-} // namespace ripple::glow::backend
+} // namespace snowflake::backend
 
-#endif // RIPPLE_GLOW_VK_CONTEXT_HPP
+#endif // SNOWFLAKE_VK_CONTEXT_HPP

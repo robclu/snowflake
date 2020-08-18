@@ -1,8 +1,8 @@
-//==--- glow/src/engine/engine.cpp ------------------------- -*- C++ -*- ---==//
+//==--- snowflake/src/engine/engine.cpp -------------------- -*- C++ -*- ---==//
 //
-//                            Ripple - Glow
+//                              Snowflake
 //
-//                      Copyright (c) 2020 Ripple
+//                      Copyright (c) 2020 Rob Clucas
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
@@ -13,27 +13,26 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <ripple/core/log/logger.hpp>
-#include <ripple/glow/engine/engine.hpp>
+#include <snowflake/engine/engine.hpp>
+#include <wrench/log/logger.hpp>
 
-namespace ripple::glow {
+namespace snowflake {
 
 //==--- [public static] ----------------------------------------------------==//
 
-auto Engine::create() -> Engine* {
+auto Engine::create() noexcept -> Engine* {
   static Engine engine;
-
   return &engine;
 }
 
 //==--- [private] ----------------------------------------------------------==//
 
-Engine::Engine() {
-  _driver = Driver::create(_platform);
+Engine::Engine() noexcept {
+  driver_ = Driver::create(platform_);
 }
 
-Engine::~Engine() {
-  _driver->destroy();
+Engine::~Engine() noexcept {
+  driver_->destroy();
 }
 
-} // namespace ripple::glow
+} // namespace snowflake

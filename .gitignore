@@ -1,2 +1,5 @@
 compile_commands.json
+.vscode/
 build/
+external/volk
+external/wrench

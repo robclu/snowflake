@@ -1,8 +1,8 @@
-//==--- ripple/core/util/portability.hppw ------------------ -*- C++ -*- ---==//
+//==--- snowflake/util/portability.hppw -------------------- -*- C++ -*- ---==//
 //
-//                            Ripple - Core
+//                            Snowflake
 //
-//                      Copyright (c) 2020 Ripple
+//                      Copyright (c) 2020 Rob Clucas
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
@@ -13,13 +13,13 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_CORE_UTIL_PORTABILITY_HPP
-#define RIPPLE_CORE_UTIL_PORTABILITY_HPP
+#ifndef SNOWFLAKE_UTIL_PORTABILITY_HPP
+#define SNOWFLAKE_UTIL_PORTABILITY_HPP
 
 #if __cplusplus == 201703L
-  #define ripple_no_discard [[nodiscard]]
+  #define snowflake_nodiscard [[nodiscard]]
 #else
-  #define ripple_no_discard
+  #define snowflake_nodiscard
 #endif
 
-#endif // RIPPLE_CORE_UTIL_PORTABILITY_HPP
+#endif // SNOWFLAKE_UTIL_PORTABILITY_HPP

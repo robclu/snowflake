@@ -1,9 +1,11 @@
-#==--- ripple/glow//apps/CMakeLists.txt -------------------------------------==#
+#==--- snowflake/apps/CMakeLists.txt ----------------------------------------==#
 #
-#                      Copyright (c) 2020 Ripple
+#                                 Snowflake
+#
+#                      Copyright (c) 2020 Rob Clucas
 #
 #  This file is distributed under the MIT License. See LICENSE for details.
-#
+# 
 #==--------------------------------------------------------------------------==#
 
 #===== [packages] =============================================================#
@@ -29,49 +31,50 @@ endif()
 #===== [definitions] ==========================================================#
 
 if (IOS OR ANDROID)
-  add_compile_definitions(GLOW_RESIZABLE_WINDOW=0)
+  add_compile_definitions(SNOWFLAKE_RESIZABLE_WINDOW=0)
 else()
-  add_compile_definitions(GLOW_RESIZABLE_WINDOW=1)
+  add_compile_definitions(SNOWFLAKE_RESIZABLE_WINDOW=1)
 endif()
 
 #===== [sources] ==============================================================#
 
-set(GLOW_INCLUDE_DIR ${glow_SOURCE_DIR}/include)
-set(GLOW_SOURCE_DIR  ${glow_SOURCE_DIR}/src)
-set(SOURCES glow.cpp)
+set(SNOWFLAKE_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+set(SNOWFLAKE_SOURCE_DIR  ${PROJECT_SOURCE_DIR}/src)
+set(SOURCES snowflake.cpp)
 
-if (GLOW_HEADLESS_PLATFORM)
+if (SNOWFLAKE_HEADLESS_PLATFORM)
 else()
   list(
     APPEND SOURCES 
-    ${GLOW_SOURCE_DIR}/backend/platform/sdl_platform.cpp
+    ${SNOWFLAKE_SOURCE_DIR}/backend/platform/sdl_platform.cpp
   )
-endif(GLOW_HEADLESS_PLATFORM)
+endif(SNOWFLAKE_HEADLESS_PLATFORM)
 
 list(
   APPEND SOURCES
-  ${GLOW_SOURCE_DIR}/backend/vk/frame_data.cpp
-  ${GLOW_SOURCE_DIR}/backend/vk/vulkan_command_buffer.cpp
-  ${GLOW_SOURCE_DIR}/backend/vk/vulkan_command_pool.cpp
-  ${GLOW_SOURCE_DIR}/backend/vk/vulkan_context.cpp
-  ${GLOW_SOURCE_DIR}/backend/vk/vulkan_driver.cpp
-  ${GLOW_SOURCE_DIR}/backend/vk/vulkan_surface_context.cpp
-  ${GLOW_SOURCE_DIR}/engine/engine.cpp
-  ${GLOW_SOURCE_DIR}/window/window.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/backend/vk/frame_data.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/backend/vk/vulkan_command_buffer.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/backend/vk/vulkan_command_pool.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/backend/vk/vulkan_context.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/backend/vk/vulkan_driver.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/backend/vk/vulkan_surface_context.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/engine/engine.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/window/window.cpp
 )
 
 #===== [applications] =========================================================#
 
-add_executable(glow ${SOURCES})
+add_executable(snowflake ${SOURCES})
 include_directories(
-  ${GLOW_INCLUDE_DIR}
+  ${SNOWFLAKE_INCLUDE_DIR}
   ${Vulkan_INCLUDE_DIRS}
   ${SDL2_INCLUDE_DIR}
   ${EXTRA_INCLUDE_DIRS}
 )
 target_link_libraries(
-  glow 
+  snowflake
   PRIVATE 
+  wrench::wrench
   volk
   Vulkan::Vulkan
   ${SDL2_LIBRARY}

@@ -1,6 +1,6 @@
-//==--- glow/backend/vk/frame_data.hpp --------------------- -*- C++ -*- ---==//
+//==--- snowflake/backend/vk/frame_data.hpp ---------------- -*- C++ -*- ---==//
 //
-//                              Ripple - Glow
+//                                Snowflake
 //
 //                      Copyright (c) 2020 Rob Clucas
 //
@@ -13,13 +13,13 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_BACKEND_VK_FRAME_DATA_HPP
-#define RIPPLE_GLOW_BACKEND_VK_FRAME_DATA_HPP
+#ifndef SNOWFLAKE_BACKEND_VK_FRAME_DATA_HPP
+#define SNOWFLAKE_BACKEND_VK_FRAME_DATA_HPP
 
 #include "vulkan_command_buffer.hpp"
 #include "vulkan_command_pool.hpp"
 
-namespace ripple::glow::backend {
+namespace snowflake::backend {
 
 /// Holds the command buffer pools for the frame. Each pool type is stored in a
 /// container, where each container should hold as many pools of each type as
@@ -47,13 +47,13 @@ struct FrameCommandPools {
     VulkanDriver* driver,
     uint32_t      graphics_queue_family_index,
     uint32_t      compute_queue_family_index,
-    uint32_t      transfer_queue_family_index);
+    uint32_t      transfer_queue_family_index) noexcept;
 
   //==--- [interface] ------------------------------------------------------==//
 
   /// Returns a reference to the command pools for BufferKind command buffers.
   template <CommandBufferKind BufferKind>
-  auto get_pools() -> PoolContainer& {
+  auto get_pools() noexcept -> PoolContainer& {
     if constexpr (BufferKind == CommandBufferKind::graphics) {
       return graphics;
     } else if (BufferKind == CommandBufferKind::compute) {
@@ -64,15 +64,13 @@ struct FrameCommandPools {
   }
 
   /// Resets each of the command pools.
-  auto reset() -> void;
+  auto reset() noexcept -> void;
 };
 
 /// Holds synchronization primitives for the frame. This struct is designed to
 /// use Vulkan >= 1.2, which supports timeline semaphores, thus reducing the
 /// need for fences in the frame synchronisation.
 struct FrameSync {
-  using CommandBufferCounter = std::atomic_uint32_t;
-
   // clang-format off
   /// Semaphore for the graphics queue.
   VkSemaphore graphics_timeline_semaphore = VK_NULL_HANDLE;
@@ -87,7 +85,7 @@ struct FrameSync {
   // clang-format on
 
   /// Returns true if all semaphores are valid.
-  auto all_semaphores_valid() const -> bool {
+  auto all_semaphores_valid() const noexcept -> bool {
     const auto valid = graphics_timeline_semaphore &&
                        compute_timeline_semaphore &&
                        transfer_timeline_semaphore;
@@ -100,7 +98,7 @@ struct FrameData {
   FrameCommandPools command_pools; //!< Command pools for the frame.
   FrameSync         sync;          //!< Syncronization for the frame.
 
-  //==--- [constructor] ----------------------------------------------------==//
+  //==--- [construction] ---------------------------------------------------==//
 
   /// Constructor to create the frame data with the \p driver for the frame
   /// data, and the indices of the queues for the frame data.
@@ -112,28 +110,28 @@ struct FrameData {
     VulkanDriver* driver,
     uint32_t      graphics_queue_index,
     uint32_t      compute_queue_index,
-    uint32_t      transfer_queue_index);
+    uint32_t      transfer_queue_index) noexcept;
 
   /// Destroys the frame data.
-  auto destroy() -> void;
+  auto destroy() noexcept -> void;
 
   /// Resets all data for the frame data. This will wait on the semaphores if
   /// they are all valid.
-  auto reset() -> void;
+  auto reset() noexcept -> void;
 
   /// Returns the command pool of the command buffer kind specified by
   /// BufferKind, for the \p thread_index.
-  /// \param  thread_index The thread index of the pool to get.
+  /// \param  thread_id   The thread index of the pool to get.
   /// \tparam BufferKind  The kind of the command buffers in the pool.
   template <CommandBufferKind BufferKind>
-  auto get_command_pool(size_t thread_index = 0) -> VulkanCommandPool& {
-    return command_pools.get_pools<BufferKind>()[thread_index];
+  auto get_command_pool(size_t thread_id = 0) noexcept -> VulkanCommandPool& {
+    return command_pools.get_pools<BufferKind>()[thread_id];
   }
 
  private:
-  VulkanDriver* _driver = nullptr; //!< A pointer to the driver.
+  VulkanDriver* driver_ = nullptr; //!< A pointer to the driver.
 };
 
-} // namespace ripple::glow::backend
+} // namespace snowflake::backend
 
-#endif // RIPPLE_GLOW_BACKEND_VK_FRAME_DATA_HPP
+#endif // SNOWFLAKE_BACKEND_VK_FRAME_DATA_HPP

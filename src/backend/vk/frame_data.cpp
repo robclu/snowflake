@@ -1,6 +1,6 @@
-//==--- glow/src/backend/vk/frame_data.cpp ----------------- -*- C++ -*- ---==//
+//==--- snowflake/src/backend/vk/frame_data.cpp ------------ -*- C++ -*- ---==//
 //
-//                            Ripple - Glow
+//                              Snowflake
 //
 //                      Copyright (c) 2020 Ripple
 //
@@ -13,22 +13,22 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <ripple/glow/backend/vk/frame_data.hpp>
-#include <ripple/glow/backend/vk/vulkan_driver.hpp>
+#include <snowflake/backend/vk/frame_data.hpp>
+#include <snowflake/backend/vk/vulkan_driver.hpp>
 #include <array>
 
-namespace ripple::glow::backend {
+namespace snowflake::backend {
 
 FrameData::FrameData(
   VulkanDriver* driver,
   uint32_t      graphics_queue_index,
   uint32_t      compute_queue_index,
-  uint32_t      transfer_queue_index)
-: _driver(driver),
+  uint32_t      transfer_queue_index) noexcept
+: driver_(driver),
   command_pools(
     driver, graphics_queue_index, compute_queue_index, transfer_queue_index) {}
 
-auto FrameData::reset() -> void {
+auto FrameData::reset() noexcept -> void {
   // Wait on the semaphores and fences:
   if (sync.all_semaphores_valid()) {
     // clang-format off
@@ -48,15 +48,15 @@ auto FrameData::reset() -> void {
     info.pValues        = values.data();
     info.semaphoreCount = semas.size();
 
-    _driver->context().device_table()->vkWaitSemaphoresKHR(
-      _driver->context().device(), &info, std::numeric_limits<uint64_t>::max());
+    driver_->context().device_table()->vkWaitSemaphoresKHR(
+      driver_->context().device(), &info, std::numeric_limits<uint64_t>::max());
   }
 
   // Reset all frame resources:
   command_pools.reset();
 }
 
-auto FrameData::destroy() -> void {
+auto FrameData::destroy() noexcept -> void {
   // clang-format off
   // Make sure that these can't be waited on
   sync.graphics_timeline_fence = 0;
@@ -64,8 +64,8 @@ auto FrameData::destroy() -> void {
   sync.transfer_timeline_fence = 0;
   // clang-format on
 
-  auto* dev_table = _driver->context().device_table();
-  auto  device    = _driver->context().device();
+  auto* dev_table = driver_->context().device_table();
+  auto  device    = driver_->context().device();
   if (sync.graphics_timeline_semaphore != VK_NULL_HANDLE) {
     dev_table->vkDestroySemaphore(
       device, sync.graphics_timeline_semaphore, nullptr);
@@ -95,7 +95,7 @@ FrameCommandPools::FrameCommandPools(
   VulkanDriver* driver,
   uint32_t      graphics_queue_family_index,
   uint32_t      compute_queue_family_index,
-  uint32_t      transfer_queue_family_index) {
+  uint32_t      transfer_queue_family_index) noexcept {
   for (uint16_t i = 0; i < driver->num_threads(); ++i) {
     graphics.emplace_back(driver, graphics_queue_family_index);
     compute.emplace_back(driver, compute_queue_family_index);
@@ -103,7 +103,7 @@ FrameCommandPools::FrameCommandPools(
   }
 }
 
-auto FrameCommandPools::reset() -> void {
+auto FrameCommandPools::reset() noexcept -> void {
   // clang-format off
   for (auto& pool : graphics) { pool.reset(); }
   for (auto& pool : compute)  { pool.reset(); }
@@ -111,4 +111,4 @@ auto FrameCommandPools::reset() -> void {
   // clang-format on
 }
 
-} // namespace ripple::glow::backend
+} // namespace snowflake::backend

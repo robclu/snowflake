@@ -1,8 +1,8 @@
-//==--- glow/backend/vk/vulkan_surface_context.hpp --------- -*- C++ -*- ---==//
+//==--- snowflake/backend/vk/vulkan_surface_context.hpp ---- -*- C++ -*- ---==//
 //
-//                              Ripple - Glow
+//                              Snowflake
 //
-//                      Copyright (c) 2020 Ripple
+//                      Copyright (c) 2020 Rob Clucas
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
@@ -13,12 +13,14 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_BACKEND_VULKAN_SURFACE_CONTEXT_HPP
-#define RIPPLE_GLOW_BACKEND_VULKAN_SURFACE_CONTEXT_HPP
+#ifndef SNOWFLAKE_BACKEND_VULKAN_SURFACE_CONTEXT_HPP
+#define SNOWFLAKE_BACKEND_VULKAN_SURFACE_CONTEXT_HPP
 
 #include "vulkan_context.hpp"
+#include <atomic>
+#include <vector>
 
-namespace ripple::glow::backend {
+namespace snowflake::backend {
 
 /// Froward declaration of the vulkan driver.
 class VulkanDriver;
@@ -62,41 +64,41 @@ class VulkanSurfaceContext {
 
   /// Destroys the surface context.
   /// \param context The vulkan context to use to destroy the surface context.
-  auto destroy(const VulkanContext& context) -> void;
+  auto destroy(const VulkanContext& context) noexcept -> void;
 
   /// Gets a reference to the surface.
-  auto surface() -> VkSurfaceKHR& {
-    return _surface;
+  auto surface() noexcept -> VkSurfaceKHR& {
+    return surface_;
   }
 
   /// Gets a reference to the swapchain.
-  auto swapchain() -> VkSwapchainKHR& {
-    return _swapchain;
+  auto swapchain() noexcept -> VkSwapchainKHR& {
+    return swapchain_;
   }
 
   /// Updates the current swap index.
-  auto update_swap_index() -> void {
-    _current_swap_idx = (_current_swap_idx + 1) % _swap_contexts.size();
+  auto update_swap_index() noexcept -> void {
+    current_swap_idx_ = (current_swap_idx_ + 1) % swap_contexts_.size();
   }
 
   /// Returns the current swap index.
-  auto current_swap_index() -> uint32_t& {
-    return _current_swap_idx;
+  auto current_swap_index() noexcept -> uint32_t& {
+    return current_swap_idx_;
   }
 
   /// Returns the present mode for the surface context.
-  auto present_mode() const -> PresentMode {
-    return _present_mode;
+  auto present_mode() const noexcept -> PresentMode {
+    return present_mode_;
   }
 
   /// Returns a reference to the image available semaphore.
-  auto image_available_semaphore() -> VkSemaphore& {
-    return _image_available;
+  auto image_available_semaphore() noexcept -> VkSemaphore& {
+    return image_available_;
   }
 
   /// Returns a reference to the done rendering semaphore.
-  auto done_rendering_semaphore() -> VkSemaphore& {
-    return _done_rendering;
+  auto done_rendering_semaphore() noexcept -> VkSemaphore& {
+    return done_rendering_;
   }
 
   /// Intializes the surface context with \p width and \p height and \p
@@ -110,7 +112,7 @@ class VulkanSurfaceContext {
     const VulkanContext& context,
     PresentMode          present_mode,
     uint32_t             width,
-    uint32_t             height) -> bool;
+    uint32_t             height) noexcept -> bool;
 
   /// Presents the current swapchain image to the graphics_queue from the
   /// context. It returns true if the presentation was successfull, or false is
@@ -120,7 +122,8 @@ class VulkanSurfaceContext {
   /// \param fence   A fence to wait on, while the value of the fence is greater
   ///                than zero.
   auto
-  present(const VulkanContext& context, std::atomic_uint32_t& fence) -> bool;
+  present(const VulkanContext& context, std::atomic_uint32_t& fence) noexcept
+    -> bool;
 
   /// Re-initializes the surface context with \p width and \p height and \p
   /// present_mode.
@@ -135,36 +138,36 @@ class VulkanSurfaceContext {
     const VulkanContext& context,
     PresentMode          present_mode,
     uint32_t             width,
-    uint32_t             height) -> bool;
+    uint32_t             height) noexcept -> bool;
 
  private:
-  VkSurfaceKHR   _surface         = VK_NULL_HANDLE; //!< Context surface.
-  VkSwapchainKHR _swapchain       = VK_NULL_HANDLE; //!< Current swapchain.
-  VkSemaphore    _image_available = VK_NULL_HANDLE; //!< If image is available.
-  VkSemaphore    _done_rendering  = VK_NULL_HANDLE; //!< For finished rendering.
-  VkQueue        _present_queue   = VK_NULL_HANDLE; //!< Presentation queue.
+  VkSurfaceKHR   surface_         = VK_NULL_HANDLE; //!< Context surface.
+  VkSwapchainKHR swapchain_       = VK_NULL_HANDLE; //!< Current swapchain.
+  VkSemaphore    image_available_ = VK_NULL_HANDLE; //!< If image is available.
+  VkSemaphore    done_rendering_  = VK_NULL_HANDLE; //!< For finished rendering.
+  VkQueue        present_queue_   = VK_NULL_HANDLE; //!< Presentation queue.
 
-  VkSurfaceCapabilitiesKHR      _surface_caps;      //!< Surface capabilities.
-  VkSurfaceFormatKHR            _surface_format;    //!< Format being used.
-  VkSurfaceTransformFlagBitsKHR _surface_transform; //!< Surface transform.
-  VkExtent2D                    _swapchain_size;    //!< Size of the surface.
-  Formats                       _formats;           //!< All available format.
-  SwapContexts                  _swap_contexts;     //!< Swap contexts.
+  VkSurfaceCapabilitiesKHR      surface_caps_;      //!< Surface capabilities.
+  VkSurfaceFormatKHR            surface_format_;    //!< Format being used.
+  VkSurfaceTransformFlagBitsKHR surface_transform_; //!< Surface transform.
+  VkExtent2D                    swapchain_size_;    //!< Size of the surface.
+  Formats                       formats_;           //!< All available format.
+  SwapContexts                  swap_contexts_;     //!< Swap contexts.
 
   // clang-format off
   /// All supported present modes, so we dont have to query them each time the
   /// swapchain is recreated.
-  PresentModes     _present_modes;
+  PresentModes     present_modes_;
   /// The present mode for the surface.
-  PresentMode      _present_mode = PresentMode::sync_to_vblank;
+  PresentMode      present_mode_ = PresentMode::sync_to_vblank;
   /// The present mode for the swapchain.
-  VkPresentModeKHR _swapchain_present_mode;
+  VkPresentModeKHR swapchain_present_mode_;
   // clang-format on
 
-  uint32_t _current_swap_idx  = 0;     //!< Current swap context index.
-  uint32_t _num_images        = 0;     //!< Number of swapchain images.
-  bool     _srgb_enabled      = false; //!< SRGB backfuffer enable.
-  bool     _prerotate_enabled = false; //!< Prerotate enabled.
+  uint32_t current_swap_idx_  = 0;     //!< Current swap context index.
+  uint32_t num_images_        = 0;     //!< Number of swapchain images.
+  bool     srgb_enabled_      = false; //!< SRGB backfuffer enable.
+  bool     prerotate_enabled_ = false; //!< Prerotate enabled.
 
   //==--- [methods] --------------------------------------------------------==//
 
@@ -172,89 +175,89 @@ class VulkanSurfaceContext {
   /// \param context The vulkan context.
   /// \param width   The width of the extent.
   /// \param height  The height of the extent.
-  auto
-  create_extent(const VulkanContext& context, uint32_t width, uint32_t height)
+  auto create_extent(
+    const VulkanContext& context, uint32_t width, uint32_t height) noexcept
     -> void;
 
   /// Creates the images for the swapchain.
-  auto create_images(const VulkanContext& context) -> bool;
+  auto create_images(const VulkanContext& context) noexcept -> bool;
 
   /// Creates the image views for the images.
-  auto create_image_views(const VulkanContext& context) -> bool;
+  auto create_image_views(const VulkanContext& context) noexcept -> bool;
 
   /// Creates the present modes.
   /// \param context The vulkan context.
-  auto create_present_modes(const VulkanContext& context) -> bool;
+  auto create_present_modes(const VulkanContext& context) noexcept -> bool;
 
   /// Creates the semaphores for the surface images.
-  auto create_semaphores(const VulkanContext& context) -> bool;
+  auto create_semaphores(const VulkanContext& context) noexcept -> bool;
 
   /// Gets the surface capabilities for the surface.
   /// \param context The vulkan context.
-  auto create_surface_caps(const VulkanContext& context) -> bool;
+  auto create_surface_caps(const VulkanContext& context) noexcept -> bool;
 
   /// Gets the surface format.
   /// \param context       The vulkan context.
   /// \param surface_info The surface info.
   auto create_surface_formats(
-    const VulkanContext& context, VkPhysicalDeviceSurfaceInfo2KHR& surface_info)
-    -> bool;
+    const VulkanContext&             context,
+    VkPhysicalDeviceSurfaceInfo2KHR& surface_info) noexcept -> bool;
 
   /// Gets the best surface format option.
   /// \param context The vulkan context.
-  auto create_surface_format(const VulkanContext& context) -> bool;
+  auto create_surface_format(const VulkanContext& context) noexcept -> bool;
 
   /// Creates the swapchain for the surface context.
   /// \param context The vulkan context.
-  auto create_swapchain(const VulkanContext& context) -> bool;
+  auto create_swapchain(const VulkanContext& context) noexcept -> bool;
 
   /// Intializes the vulkan swapchain, with \p width and \p height.
   /// \param context The vulkan context.
   /// \param width   The width of the surface.
   /// \param height  The height of the surface.
-  auto
-  init_swapchain(const VulkanContext& context, uint32_t width, uint32_t height)
+  auto init_swapchain(
+    const VulkanContext& context, uint32_t width, uint32_t height) noexcept
     -> bool;
 
   /// Returns the composite mode for the swapchain.
-  auto get_composite_mode() const -> VkCompositeAlphaFlagBitsKHR;
+  auto get_composite_mode() const noexcept -> VkCompositeAlphaFlagBitsKHR;
 
   /// Sets the present mode for the swapchain.
-  auto set_present_mode() -> void;
+  auto set_present_mode() noexcept -> void;
 
   /// Sets the presentation queue.
   /// \param context The vulkan context.
-  auto set_present_queue(const VulkanContext& context) -> void;
+  auto set_present_queue(const VulkanContext& context) noexcept -> void;
 
   /// Sets the transform properties for the surface.
   /// \param context The vulkan context.
-  auto set_surface_transform(const VulkanContext& context) -> void;
+  auto set_surface_transform(const VulkanContext& context) noexcept -> void;
 
   /// Sets the number of images for the swapchain.
-  auto set_num_swapchain_images() -> void;
+  auto set_num_swapchain_images() noexcept -> void;
 
   /// Sets the composite modes for the swapchain.
-  auto set_composite_mode() -> void;
+  auto set_composite_mode() noexcept -> void;
 
   //==--- [destruction] ----------------------------------------------------==//
 
   /// Destroys the semaphores using the \p context.
   /// \param context The vulkan context used to initialize the semaphores.
-  auto destroy_semaphores(const VulkanContext& context) -> void;
+  auto destroy_semaphores(const VulkanContext& context) noexcept -> void;
 
   /// Destroys the surface using the \p context.
   /// \param context The vulkan context used to initialize the surface.
-  auto destroy_surface(const VulkanContext& context) -> void;
+  auto destroy_surface(const VulkanContext& context) noexcept -> void;
 
   /// Destroys the swapchain using the \p context.
   /// \param context The vulkan context used to initialize the swapchain.
-  auto destroy_swapchain(const VulkanContext& context) -> void;
+  auto destroy_swapchain(const VulkanContext& context) noexcept -> void;
 
   /// Destroys the swap contexts using the \p context.
   /// \param context The vulkan context used to initialize the swap contexts.
-  auto destroy_swap_contexts(const VulkanContext& context) -> void;
+  auto destroy_swap_contexts(const VulkanContext& context) noexcept -> void;
 };
 
-} // namespace ripple::glow::backend
+} // namespace snowflake::backend
 
-#endif // RIPPLE_GLOW_BACKEND_VULKAN_SURFACE_CONTEXT_HPP
+#endif // SNOWFLAKE_BACKEND_VULKAN_SURFACE_CONTEXT_HPP

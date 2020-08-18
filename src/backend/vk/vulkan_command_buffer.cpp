@@ -1,6 +1,6 @@
-//==--- glow/src/backend/vk/vulkan_command_buffer.cpp ------ -*- C++ -*- ---==//
+//==--- snowflake/src/backend/vk/vulkan_command_buffer.cpp -- -*- C++ -*----==//
 //
-//                              Ripple - Glow
+//                                Snowflake
 //
 //                      Copyright (c) 2020 Rob Clucas
 //
@@ -13,14 +13,14 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <ripple/glow/backend/vk/vulkan_command_buffer.hpp>
-#include <ripple/glow/backend/vk/vulkan_driver.hpp>
+#include <snowflake/backend/vk/vulkan_command_buffer.hpp>
+#include <snowflake/backend/vk/vulkan_driver.hpp>
 
-namespace ripple::glow::backend {
+namespace snowflake::backend {
 
 auto CommandBufferDeleter::operator()(VulkanCommandBuffer* buffer) const
-  -> void {
-  buffer->_driver->_allocator.cmd_buffer_allocator.destroy(buffer);
+  noexcept -> void {
+  buffer->driver_->allocator_.cmd_buffer_allocator.recycle(buffer);
 }
 
-} // namespace ripple::glow::backend
+} // namespace snowflake::backend

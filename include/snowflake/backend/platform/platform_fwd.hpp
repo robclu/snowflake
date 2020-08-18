@@ -1,8 +1,8 @@
-//==--- glow/backend/platform/platform_fwd.hpp ------------- -*- C++ -*- ---==//
+//==--- snowflake/backend/platform/platform_fwd.hpp -------- -*- C++ -*- ---==//
 //
-//                              Ripple - Glow
+//                              Snowflake
 //
-//                      Copyright (c) 2020 Ripple
+//                      Copyright (c) 2020 Rob Clucas
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
@@ -13,10 +13,10 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_BACKEND_PLATFORM_FWD_HPP
-#define RIPPLE_GLOW_BACKEND_PLATFORM_FWD_HPP
+#ifndef SNOWFLAKE_BACKEND_PLATFORM_FWD_HPP
+#define SNOWFLAKE_BACKEND_PLATFORM_FWD_HPP
 
-namespace ripple::glow::backend {
+namespace snowflake::backend {
 
 //==--- [forward declarations] ---------------------------------------------==//
 
@@ -39,6 +39,6 @@ class SdlPlatform;
 /// Defines a headless platform.
 class HeadlessPlatform;
 
-} // namespace ripple::glow::backend
+} // namespace snowflake::backend
 
-#endif // RIPPLE_GLOW_BACKEND_PLATFORM_FWD_HPP
+#endif // SNOWFLAKE_BACKEND_PLATFORM_FWD_HPP

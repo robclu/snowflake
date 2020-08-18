@@ -1,6 +1,6 @@
-//==--- glow/src/backend/vk/vulkan_surface_context.cpp ----- -*- C++ -*- ---==//
+//==--- snowflake/src/backend/vk/vulkan_surface_context.cpp --*- C++ -*- ---==//
 //
-//                            Ripple - Glow
+//                              Snowflake
 //
 //                      Copyright (c) 2020 Ripple
 //
@@ -13,15 +13,15 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <ripple/core/log/logger.hpp>
-#include <ripple/glow/backend/vk/vulkan_surface_context.hpp>
+#include <snowflake/backend/vk/vulkan_surface_context.hpp>
+#include <wrench/log/logger.hpp>
 
-namespace ripple::glow::backend {
+namespace snowflake::backend {
 
 namespace {
 
 static inline auto
-format_to_aspect_mask(VkFormat format) -> VkImageAspectFlags {
+format_to_aspect_mask(VkFormat format) noexcept -> VkImageAspectFlags {
   // clang-format off
   switch (format) {
     case VK_FORMAT_UNDEFINED          : return 0;
@@ -42,7 +42,8 @@ format_to_aspect_mask(VkFormat format) -> VkImageAspectFlags {
 
 //==--- [interface] --------------------------------------------------------==//
 
-auto VulkanSurfaceContext::destroy(const VulkanContext& context) -> void {
+auto VulkanSurfaceContext::destroy(const VulkanContext& context) noexcept
+  -> void {
   destroy_swap_contexts(context);
   destroy_swapchain(context);
   destroy_semaphores(context);
@@ -53,13 +54,13 @@ auto VulkanSurfaceContext::init(
   const VulkanContext& context,
   PresentMode          present_mode,
   uint32_t             width,
-  uint32_t             height) -> bool {
-  if (_surface == VK_NULL_HANDLE) {
-    log_error("Can't initialize surface context until surface is set.");
+  uint32_t             height) noexcept -> bool {
+  if (surface_ == VK_NULL_HANDLE) {
+    wrench::log_error("Can't initialize surface context until surface is set.");
     return false;
   }
 
-  _present_mode = present_mode;
+  present_mode_ = present_mode;
 
   if (!init_swapchain(context, width, height)) {
     return false;
@@ -68,8 +69,8 @@ auto VulkanSurfaceContext::init(
 }
 
 auto VulkanSurfaceContext::present(
-  const VulkanContext& context, std::atomic_uint32_t& fence) -> bool {
-  if (_done_rendering == VK_NULL_HANDLE) {
+  const VulkanContext& context, std::atomic_uint32_t& fence) noexcept -> bool {
+  if (done_rendering_ == VK_NULL_HANDLE) {
     return false;
   }
 
@@ -81,19 +82,19 @@ auto VulkanSurfaceContext::present(
   VkSubmitInfo         submit_info{
     .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
     .waitSemaphoreCount   = 1u,
-    .pWaitSemaphores      = &_image_available,
+    .pWaitSemaphores      = &image_available_,
     .pWaitDstStageMask    = &wait_dest_stage_mask,
     .commandBufferCount   = 0,
     .pCommandBuffers      = nullptr,
     .signalSemaphoreCount = 1u,
-    .pSignalSemaphores    = &_done_rendering,
+    .pSignalSemaphores    = &done_rendering_,
   };
   // clang-format on
 
   auto result =
     vkQueueSubmit(context.graphics_queue(), 1, &submit_info, VK_NULL_HANDLE);
   if (result != VK_SUCCESS) {
-    log_error("Failed to submit semaphore signal for done rendering.");
+    wrench::log_error("Failed to submit semaphore signal for done rendering.");
   }
 
   while (fence.load(std::memory_order_relaxed) > 0) {
@@ -104,14 +105,14 @@ auto VulkanSurfaceContext::present(
   result                  = VK_SUCCESS;
   VkPresentInfoKHR info   = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
   info.waitSemaphoreCount = 1;
-  info.pWaitSemaphores    = &_done_rendering;
+  info.pWaitSemaphores    = &done_rendering_;
   info.swapchainCount     = 1;
-  info.pSwapchains        = &_swapchain;
-  info.pImageIndices      = &_current_swap_idx;
+  info.pSwapchains        = &swapchain_;
+  info.pImageIndices      = &current_swap_idx_;
   info.pResults           = &result;
 
   auto submit_result =
-    context.device_table()->vkQueuePresentKHR(_present_queue, &info);
+    context.device_table()->vkQueuePresentKHR(present_queue_, &info);
 
 #ifdef ANDROID
   // clang-format off
@@ -123,7 +124,7 @@ auto VulkanSurfaceContext::present(
 #endif
 
   if (submit_result != VK_SUCCESS || result != VK_SUCCESS) {
-    log_error("Failed to present to queue.");
+    wrench::log_error("Failed to present to queue.");
     return false;
   }
   return true;
@@ -133,8 +134,8 @@ auto VulkanSurfaceContext::reinit(
   const VulkanContext& context,
   PresentMode          present_mode,
   uint32_t             width,
-  uint32_t             height) -> bool {
-  _present_mode = present_mode;
+  uint32_t             height) noexcept -> bool {
+  present_mode_ = present_mode;
   create_extent(context, width, height);
   set_present_mode();
   set_num_swapchain_images();
@@ -156,13 +157,12 @@ auto VulkanSurfaceContext::reinit(
 
 //==--- [private] ----------------------------------------------------------==//
 
-auto VulkanSurfaceContext::create_surface_caps(const VulkanContext& context)
-  -> bool {
+auto VulkanSurfaceContext::create_surface_caps(
+  const VulkanContext& context) noexcept -> bool {
   VkPhysicalDeviceSurfaceInfo2KHR surface_info = {
     VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR};
-  surface_info.surface = _surface;
+  surface_info.surface = surface_;
 
-  //==--- [get surface caps]
   auto phy_device = context.physical_device();
   auto result     = VK_SUCCESS;
   if (context.supports_surface_caps_2()) {
@@ -175,10 +175,10 @@ auto VulkanSurfaceContext::create_surface_caps(const VulkanContext& context)
       return false;
     }
 
-    _surface_caps = surface_caps_2.surfaceCapabilities;
+    surface_caps_ = surface_caps_2.surfaceCapabilities;
   } else {
     result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-      phy_device, _surface, &_surface_caps);
+      phy_device, surface_, &surface_caps_);
     if (result != VK_SUCCESS) {
       return false;
     }
@@ -192,8 +192,8 @@ auto VulkanSurfaceContext::create_surface_caps(const VulkanContext& context)
 }
 
 auto VulkanSurfaceContext::create_surface_formats(
-  const VulkanContext& context, VkPhysicalDeviceSurfaceInfo2KHR& surface_info)
-  -> bool {
+  const VulkanContext&             context,
+  VkPhysicalDeviceSurfaceInfo2KHR& surface_info) noexcept -> bool {
   auto format_count = uint32_t{0};
   auto device       = context.physical_device();
   if (context.supports_surface_caps_2()) {
@@ -214,19 +214,19 @@ auto VulkanSurfaceContext::create_surface_formats(
       return false;
     }
 
-    _formats.reserve(format_count);
+    formats_.reserve(format_count);
     for (auto& f : formats2) {
-      _formats.push_back(f.surfaceFormat);
+      formats_.push_back(f.surfaceFormat);
     }
   } else {
     auto result = vkGetPhysicalDeviceSurfaceFormatsKHR(
-      device, _surface, &format_count, nullptr);
+      device, surface_, &format_count, nullptr);
     if (result != VK_SUCCESS) {
       return false;
     }
-    _formats.resize(format_count);
+    formats_.resize(format_count);
     result = vkGetPhysicalDeviceSurfaceFormatsKHR(
-      device, _surface, &format_count, _formats.data());
+      device, surface_, &format_count, formats_.data());
 
     if (result != VK_SUCCESS) {
       return false;
@@ -235,30 +235,30 @@ auto VulkanSurfaceContext::create_surface_formats(
   return true;
 }
 
-auto VulkanSurfaceContext::create_surface_format(const VulkanContext& context)
-  -> bool {
-  const auto format_count = _formats.size();
+auto VulkanSurfaceContext::create_surface_format(
+  const VulkanContext& context) noexcept -> bool {
+  const auto format_count = formats_.size();
   if (format_count == 0) {
-    log_error("Surface has no formats, can't create swapchain.");
+    wrench::log_error("Surface has no formats, can't create swapchain.");
     return false;
   }
 
   // Only 1 undefined format, just choose it to be the default:
-  if (format_count == 1 && _formats[0].format == VK_FORMAT_UNDEFINED) {
-    _surface_format        = _formats[0];
-    _surface_format.format = VK_FORMAT_B8G8R8A8_UNORM;
+  if (format_count == 1 && formats_.front().format == VK_FORMAT_UNDEFINED) {
+    surface_format_        = formats_.front();
+    surface_format_.format = VK_FORMAT_B8G8R8A8_UNORM;
     return true;
   }
 
   // Have multiple, look for something that we want:
-  for (const auto& format : _formats) {
+  for (const auto& format : formats_) {
     // Look for SRGB if that's what we want:
-    if (_srgb_enabled) {
+    if (srgb_enabled_) {
       if (
         format.format == VK_FORMAT_R8G8B8A8_SRGB ||
         format.format == VK_FORMAT_B8G8R8A8_SRGB ||
         format.format == VK_FORMAT_A8B8G8R8_SRGB_PACK32) {
-        _surface_format = format;
+        surface_format_ = format;
         return true;
       }
       continue;
@@ -268,18 +268,18 @@ auto VulkanSurfaceContext::create_surface_format(const VulkanContext& context)
       format.format == VK_FORMAT_R8G8B8A8_UNORM ||
       format.format == VK_FORMAT_B8G8R8A8_UNORM ||
       format.format == VK_FORMAT_A8B8G8R8_UNORM_PACK32) {
-      _surface_format = format;
+      surface_format_ = format;
       return true;
     }
   }
 
   // Haven't found one that we want, choose the first:
-  _surface_format = _formats[0];
+  surface_format_ = formats_.front();
   return true;
 }
 
-auto VulkanSurfaceContext::set_surface_transform(const VulkanContext& context)
-  -> void {
+auto VulkanSurfaceContext::set_surface_transform(
+  const VulkanContext& context) noexcept -> void {
   // clang-format off
   constexpr auto transform_names = std::array<const char*, 9>{
     "IDENTITY_BIT_KHR",
@@ -294,108 +294,113 @@ auto VulkanSurfaceContext::set_surface_transform(const VulkanContext& context)
   };
   // clang-format on
 
-  log_info(
-    "Current surface transform is 0x{0:x}",
-    static_cast<unsigned>(_surface_caps.currentTransform));
+  if constexpr (wrench::Log::would_log<wrench::LogLevel::info>()) {
+    wrench::log_info(
+      "Current surface transform is 0x{0:x}",
+      static_cast<unsigned>(surface_caps_.currentTransform));
 
-  for (unsigned i = 0; i <= transform_names.size(); ++i) {
-    if (_surface_caps.supportedTransforms & (1u << i)) {
-      log_info("Supported transform 0x{0:x}: {1}", 1u << i, transform_names[i]);
+    for (unsigned i = 0; i <= transform_names.size(); ++i) {
+      if (surface_caps_.supportedTransforms & (1u << i)) {
+        wrench::log_info(
+          "Supported transform 0x{0:x}: {1}", 1u << i, transform_names[i]);
+      }
     }
   }
 
   VkSurfaceTransformFlagBitsKHR pre_transform;
-  const auto has_id_bit = (_surface_caps.supportedTransforms &
+  const auto has_id_bit = (surface_caps_.supportedTransforms &
                            VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) != 0;
-  if (!_prerotate_enabled && has_id_bit) {
+  if (!prerotate_enabled_ && has_id_bit) {
     pre_transform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
   } else {
-    pre_transform = _surface_caps.currentTransform;
+    pre_transform = surface_caps_.currentTransform;
   }
 
-  if (pre_transform != _surface_caps.currentTransform) {
-    log_warn(
+  if (pre_transform != surface_caps_.currentTransform) {
+    wrench::log_warn(
       "Surface transform (0x{0:x}) does not match current transform (0x{1:x}) "
       " Might get performance penalty",
       static_cast<unsigned>(pre_transform),
-      static_cast<unsigned>(_surface_caps.currentTransform));
+      static_cast<unsigned>(surface_caps_.currentTransform));
   }
 
-  _surface_transform = pre_transform;
+  surface_transform_ = pre_transform;
 }
 
 auto VulkanSurfaceContext::create_extent(
-  const VulkanContext& context, uint32_t width, uint32_t height) -> void {
+  const VulkanContext& context, uint32_t width, uint32_t height) noexcept
+  -> void {
   set_surface_transform(context);
 
-  log_info(
+  wrench::log_info(
     "Swapchain current extent: {0} x {1}",
-    static_cast<int>(_surface_caps.currentExtent.width),
-    static_cast<int>(_surface_caps.currentExtent.height));
+    static_cast<int>(surface_caps_.currentExtent.width),
+    static_cast<int>(surface_caps_.currentExtent.height));
 
   // TODO: Try to match the swapchain size up with what we expect.
 
-  // If we are using pre-rotate of 90 or 270 degrees, we need to flip width and
-  // height.
+  // If we are using pre-rotate of 90 or 270 degrees,
+  // we need to flip width and height.
   const auto mask = VK_SURFACE_TRANSFORM_ROTATE_90_BIT_KHR |
                     VK_SURFACE_TRANSFORM_ROTATE_270_BIT_KHR |
                     VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_90_BIT_KHR |
                     VK_SURFACE_TRANSFORM_HORIZONTAL_MIRROR_ROTATE_270_BIT_KHR;
-  if (_surface_transform & mask) {
+  if (surface_transform_ & mask) {
     std::swap(width, height);
   }
 
   // Clamp the target width, height to boundaries.
-  const auto& ext_max    = _surface_caps.maxImageExtent;
-  const auto& ext_min    = _surface_caps.minImageExtent;
+  const auto& ext_max    = surface_caps_.maxImageExtent;
+  const auto& ext_min    = surface_caps_.minImageExtent;
   const auto  w_min      = std::min(width, ext_max.width);
   const auto  h_min      = std::min(height, ext_max.height);
-  _swapchain_size.width  = std::max(w_min, ext_min.width);
-  _swapchain_size.height = std::max(h_min, ext_min.height);
+  swapchain_size_.width  = std::max(w_min, ext_min.width);
+  swapchain_size_.height = std::max(h_min, ext_min.height);
 }
 
-auto VulkanSurfaceContext::create_present_modes(const VulkanContext& context)
-  -> bool {
+auto VulkanSurfaceContext::create_present_modes(
+  const VulkanContext& context) noexcept -> bool {
   auto num_present_modes = uint32_t{0};
   auto phy_dev           = context.physical_device();
   auto result            = vkGetPhysicalDeviceSurfacePresentModesKHR(
-    phy_dev, _surface, &num_present_modes, nullptr);
+    phy_dev, surface_, &num_present_modes, nullptr);
   if (result != VK_SUCCESS) {
-    log_error("Failed to get number of present modes for surface context.");
+    wrench::log_error(
+      "Failed to get number of present modes for surface context.");
     return false;
   }
 
-  _present_modes.resize(num_present_modes);
+  present_modes_.resize(num_present_modes);
   result = vkGetPhysicalDeviceSurfacePresentModesKHR(
-    phy_dev, _surface, &num_present_modes, _present_modes.data());
+    phy_dev, surface_, &num_present_modes, present_modes_.data());
   if (result != VK_SUCCESS) {
-    log_error("Failed to create present modes for surface context.");
+    wrench::log_error("Failed to create present modes for surface context.");
     return false;
   }
   return true;
 }
 
-auto VulkanSurfaceContext::set_present_mode() -> void {
-  _swapchain_present_mode = VK_PRESENT_MODE_FIFO_KHR;
-  if (_present_mode == PresentMode::sync_to_vblank) {
+auto VulkanSurfaceContext::set_present_mode() noexcept -> void {
+  swapchain_present_mode_ = VK_PRESENT_MODE_FIFO_KHR;
+  if (present_mode_ == PresentMode::sync_to_vblank) {
     return;
   }
 
   // Try the others:
-  const bool allow_mlbox = _present_mode != PresentMode::force_tear;
-  const bool allow_immed = _present_mode != PresentMode::no_tear;
-  for (auto& present_mode : _present_modes) {
+  const bool allow_mlbox = present_mode_ != PresentMode::force_tear;
+  const bool allow_immed = present_mode_ != PresentMode::no_tear;
+  for (auto& present_mode : present_modes_) {
     if (
       (allow_immed && present_mode == VK_PRESENT_MODE_IMMEDIATE_KHR) ||
       (allow_mlbox && present_mode == VK_PRESENT_MODE_MAILBOX_KHR)) {
-      _swapchain_present_mode = present_mode;
+      swapchain_present_mode_ = present_mode;
       return;
     }
   }
 }
 
-auto VulkanSurfaceContext::set_present_queue(const VulkanContext& context)
-  -> void {
+auto VulkanSurfaceContext::set_present_queue(
+  const VulkanContext& context) noexcept -> void {
   uint32_t queue_fam_count = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(
     context.physical_device(), &queue_fam_count, nullptr);
@@ -404,17 +409,17 @@ auto VulkanSurfaceContext::set_present_queue(const VulkanContext& context)
     context.physical_device(), &queue_fam_count, queue_fam_props.data());
   uint32_t present_queue_fam_index = 0xffff;
 
-  // Check if graphics queue supports presentation, because that's ideal, and
-  // is the case for most platforms.
+  // Check if graphics queue supports presentation, because that's ideal.
+  // It's also the case for most platforms.
   VkBool32 supported = VK_FALSE;
   vkGetPhysicalDeviceSurfaceSupportKHR(
     context.physical_device(),
     context.graphics_queue_family_index(),
-    _surface,
+    surface_,
     &supported);
 
   if (supported) {
-    _present_queue = context.graphics_queue();
+    present_queue_ = context.graphics_queue();
     return;
   }
 
@@ -422,20 +427,20 @@ auto VulkanSurfaceContext::set_present_queue(const VulkanContext& context)
   // Otherwise fall back to separate graphics and presentation queues.
   for (uint32_t i = 0; i < queue_fam_count; ++i) {
     vkGetPhysicalDeviceSurfaceSupportKHR(
-      context.physical_device(), i, _surface, &supported);
+      context.physical_device(), i, surface_, &supported);
     if (supported) {
       context.device_table()->vkGetDeviceQueue(
-        context.device(), i, 0, &_present_queue);
+        context.device(), i, 0, &present_queue_);
       return;
     }
   }
 
-  log_error("Failed to find a presentation queue!");
+  wrench::log_error("Failed to find a presentation queue!");
 }
 
-auto VulkanSurfaceContext::set_num_swapchain_images() -> void {
+auto VulkanSurfaceContext::set_num_swapchain_images() noexcept -> void {
   // Already found the number of images, or set somewhere else.
-  if (_num_images > 0) {
+  if (num_images_ > 0) {
     return;
   }
 
@@ -445,67 +450,65 @@ auto VulkanSurfaceContext::set_num_swapchain_images() -> void {
   // only situation in which we'd ask for the minimum length is when using a
   // MAILBOX presentation strategy for low-latency situations where tearing is
   // acceptable.
-  const uint32_t max_count = _surface_caps.maxImageCount;
-  const uint32_t min_count = _surface_caps.minImageCount;
+  const uint32_t max_count = surface_caps_.maxImageCount;
+  const uint32_t min_count = surface_caps_.minImageCount;
 
-  _num_images = min_count + (_present_mode != PresentMode::no_tear ? 1 : 0);
+  num_images_ = min_count + (present_mode_ != PresentMode::no_tear ? 1 : 0);
 
   // According to section 30.5 of VK 1.1, maxImageCount of zero means "that
   // there is no limit on the number of images, though there may be limits
   // related to the total amount of memory used by presentable images."
-  if (max_count != 0 && _num_images > max_count) {
-    log_error("Swap chain does not support {} images.", _num_images);
-    _num_images = min_count;
+  if (max_count != 0 && num_images_ > max_count) {
+    wrench::log_error("Swap chain does not support {} images.", num_images_);
+    num_images_ = min_count;
   }
 
-  log_info("Using {} swapchain images.", _num_images);
+  wrench::log_info("Using {} swapchain images.", num_images_);
 }
 
-auto VulkanSurfaceContext::get_composite_mode() const
+auto VulkanSurfaceContext::get_composite_mode() const noexcept
   -> VkCompositeAlphaFlagBitsKHR {
   VkCompositeAlphaFlagBitsKHR composite_mode =
     VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-  const auto& _supported_comp_alpha = _surface_caps.supportedCompositeAlpha;
+  const auto alphas = {VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR,
+                       VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR,
+                       VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+                       VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR};
 
-  if (_supported_comp_alpha & VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR) {
-    composite_mode = VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR;
-  } else if (
-    _supported_comp_alpha & VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR) {
-    composite_mode = VK_COMPOSITE_ALPHA_POST_MULTIPLIED_BIT_KHR;
-  } else if (_supported_comp_alpha & VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR) {
-    composite_mode = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-  } else if (_supported_comp_alpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR) {
-    composite_mode = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+  for (auto alpha : alphas) {
+    if (surface_caps_.supportedCompositeAlpha & alpha) {
+      composite_mode = alpha;
+    }
   }
   return composite_mode;
 }
 
-auto VulkanSurfaceContext::create_swapchain(const VulkanContext& context)
-  -> bool {
-  VkSwapchainKHR old_swapchain = _swapchain;
+auto VulkanSurfaceContext::create_swapchain(
+  const VulkanContext& context) noexcept -> bool {
+  VkSwapchainKHR old_swapchain = swapchain_;
 
   // clang-format off
   VkSwapchainCreateInfoKHR info = {
     .sType              = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-    .surface            = _surface,
-    .minImageCount      = _num_images,
-    .imageFormat        = _surface_format.format,
-    .imageColorSpace    = _surface_format.colorSpace,
-    .imageExtent.width  = _swapchain_size.width,
-    .imageExtent.height = _swapchain_size.height,
+    .surface            = surface_,
+    .minImageCount      = num_images_,
+    .imageFormat        = surface_format_.format,
+    .imageColorSpace    = surface_format_.colorSpace,
+    .imageExtent.width  = swapchain_size_.width,
+    .imageExtent.height = swapchain_size_.height,
     .imageArrayLayers   = 1,
     .imageUsage         = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
                         | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
     .imageSharingMode   = VK_SHARING_MODE_EXCLUSIVE,
-    .preTransform       = _surface_transform,
+    .preTransform       = surface_transform_,
     .compositeAlpha     = get_composite_mode(),
-    .presentMode        = _swapchain_present_mode,
+    .presentMode        = swapchain_present_mode_,
     .clipped            = VK_TRUE,
     .oldSwapchain       = old_swapchain};
   // clang-format on
 
   auto result = context.device_table()->vkCreateSwapchainKHR(
-    context.device(), &info, nullptr, &_swapchain);
+    context.device(), &info, nullptr, &swapchain_);
 
   if (old_swapchain != VK_NULL_HANDLE) {
     context.device_table()->vkDestroySwapchainKHR(
@@ -513,37 +516,38 @@ auto VulkanSurfaceContext::create_swapchain(const VulkanContext& context)
   }
 
   if (result != VK_SUCCESS) {
-    log_error(
+    wrench::log_error(
       "Failed to create swapchain: (code : {})", static_cast<int>(result));
-    _swapchain = VK_NULL_HANDLE;
+    swapchain_ = VK_NULL_HANDLE;
     return false;
   }
   return true;
 }
 
-auto VulkanSurfaceContext::create_images(const VulkanContext& context) -> bool {
+auto VulkanSurfaceContext::create_images(const VulkanContext& context) noexcept
+  -> bool {
   uint32_t image_count = 0;
   auto     result      = context.device_table()->vkGetSwapchainImagesKHR(
-    context.device(), _swapchain, &image_count, nullptr);
+    context.device(), swapchain_, &image_count, nullptr);
   if (result != VK_SUCCESS) {
-    log_error("Failed to get image count for swapchain.");
+    wrench::log_error("Failed to get image count for swapchain.");
     return false;
   }
 
-  _swap_contexts.resize(image_count);
+  swap_contexts_.resize(image_count);
   std::vector<VkImage> images;
   images.resize(image_count);
   result = context.device_table()->vkGetSwapchainImagesKHR(
-    context.device(), _swapchain, &image_count, images.data());
+    context.device(), swapchain_, &image_count, images.data());
   if (result != VK_SUCCESS) {
-    log_error("Failed to create swapchain image data.");
+    wrench::log_error("Failed to create swapchain image data.");
     return false;
   }
 
   // clang-format off
   for (size_t i = 0; i < images.size(); ++i) {
-    _swap_contexts[i].attachment = {
-      .format     = _surface_format.format,
+    swap_contexts_[i].attachment = {
+      .format     = surface_format_.format,
       .image      = images[i],
       .image_view = {},
       .memory     = {}};
@@ -553,13 +557,13 @@ auto VulkanSurfaceContext::create_images(const VulkanContext& context) -> bool {
   return true;
 }
 
-auto VulkanSurfaceContext::create_image_views(const VulkanContext& context)
-  -> bool {
+auto VulkanSurfaceContext::create_image_views(
+  const VulkanContext& context) noexcept -> bool {
   VkImageViewCreateInfo info = {};
   info.sType                 = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 
   info.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-  info.format                          = _surface_format.format;
+  info.format                          = surface_format_.format;
   info.components.r                    = VK_COMPONENT_SWIZZLE_R;
   info.components.g                    = VK_COMPONENT_SWIZZLE_G;
   info.components.b                    = VK_COMPONENT_SWIZZLE_B;
@@ -569,37 +573,37 @@ auto VulkanSurfaceContext::create_image_views(const VulkanContext& context)
   info.subresourceRange.levelCount     = 1;
   info.subresourceRange.layerCount     = 1;
   info.subresourceRange.aspectMask =
-    format_to_aspect_mask(_surface_format.format);
+    format_to_aspect_mask(surface_format_.format);
 
-  for (auto& swap_context : _swap_contexts) {
+  for (auto& swap_context : swap_contexts_) {
     info.image  = swap_context.attachment.image;
     auto result = context.device_table()->vkCreateImageView(
       context.device(), &info, nullptr, &swap_context.attachment.image_view);
 
     if (result != VK_SUCCESS) {
-      log_error("Failed to create image view for attachement!");
+      wrench::log_error("Failed to create image view for attachement!");
     }
   }
 
   return true;
 }
 
-auto VulkanSurfaceContext::create_semaphores(const VulkanContext& context)
-  -> bool {
+auto VulkanSurfaceContext::create_semaphores(
+  const VulkanContext& context) noexcept -> bool {
   VkSemaphoreCreateInfo create_info = {};
   create_info.sType                 = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
   auto result = context.device_table()->vkCreateSemaphore(
-    context.device(), &create_info, nullptr, &_image_available);
+    context.device(), &create_info, nullptr, &image_available_);
   if (result != VK_SUCCESS) {
-    log_error("Failed to create image available semaphore.");
+    wrench::log_error("Failed to create image available semaphore.");
     return false;
   }
 
   result = context.device_table()->vkCreateSemaphore(
-    context.device(), &create_info, nullptr, &_done_rendering);
+    context.device(), &create_info, nullptr, &done_rendering_);
   if (result != VK_SUCCESS) {
-    log_error("Failed to create done rendering semaphore.");
+    wrench::log_error("Failed to create done rendering semaphore.");
     return false;
   }
 
@@ -607,7 +611,8 @@ auto VulkanSurfaceContext::create_semaphores(const VulkanContext& context)
 }
 
 auto VulkanSurfaceContext::init_swapchain(
-  const VulkanContext& context, uint32_t width, uint32_t height) -> bool {
+  const VulkanContext& context, uint32_t width, uint32_t height) noexcept
+  -> bool {
   set_present_queue(context);
 
   if (!create_surface_caps(context)) {
@@ -643,49 +648,49 @@ auto VulkanSurfaceContext::init_swapchain(
     return false;
   }
 
-  log_info(
+  wrench::log_info(
     "Created swapchain:\n\t- Extent: {0}x{1}\n\t- Format: {2}\n\t- Images: {3}",
-    _swapchain_size.width,
-    _swapchain_size.height,
-    _surface_format.format,
-    _formats.size());
+    swapchain_size_.width,
+    swapchain_size_.height,
+    surface_format_.format,
+    formats_.size());
 
   return true;
 }
 
 //==--- [destruction] ------------------------------------------------------==//
 
-auto VulkanSurfaceContext::destroy_semaphores(const VulkanContext& context)
-  -> void {
-  if (_image_available != VK_NULL_HANDLE) {
+auto VulkanSurfaceContext::destroy_semaphores(
+  const VulkanContext& context) noexcept -> void {
+  if (image_available_ != VK_NULL_HANDLE) {
     context.device_table()->vkDestroySemaphore(
-      context.device(), _image_available, nullptr);
+      context.device(), image_available_, nullptr);
   }
-  if (_done_rendering != VK_NULL_HANDLE) {
+  if (done_rendering_ != VK_NULL_HANDLE) {
     context.device_table()->vkDestroySemaphore(
-      context.device(), _done_rendering, nullptr);
+      context.device(), done_rendering_, nullptr);
   }
 }
 
-auto VulkanSurfaceContext::destroy_surface(const VulkanContext& context)
-  -> void {
-  if (_surface != VK_NULL_HANDLE) {
-    vkDestroySurfaceKHR(context.instance(), _surface, nullptr);
+auto VulkanSurfaceContext::destroy_surface(
+  const VulkanContext& context) noexcept -> void {
+  if (surface_ != VK_NULL_HANDLE) {
+    vkDestroySurfaceKHR(context.instance(), surface_, nullptr);
   }
 }
 
-auto VulkanSurfaceContext::destroy_swapchain(const VulkanContext& context)
-  -> void {
-  if (_swapchain != VK_NULL_HANDLE) {
+auto VulkanSurfaceContext::destroy_swapchain(
+  const VulkanContext& context) noexcept -> void {
+  if (swapchain_ != VK_NULL_HANDLE) {
     context.device_table()->vkDestroySwapchainKHR(
-      context.device(), _swapchain, nullptr);
+      context.device(), swapchain_, nullptr);
   }
 }
 
-auto VulkanSurfaceContext::destroy_swap_contexts(const VulkanContext& context)
-  -> void {
+auto VulkanSurfaceContext::destroy_swap_contexts(
+  const VulkanContext& context) noexcept -> void {
   auto device = context.device();
-  for (auto& swap_context : _swap_contexts) {
+  for (auto& swap_context : swap_contexts_) {
     auto& attachment = swap_context.attachment;
     if (attachment.image_view != VK_NULL_HANDLE) {
       context.device_table()->vkDestroyImageView(
@@ -695,4 +700,4 @@ auto VulkanSurfaceContext::destroy_swap_contexts(const VulkanContext& context)
   }
 }
 
-} // namespace ripple::glow::backend
+} // namespace snowflake::backend

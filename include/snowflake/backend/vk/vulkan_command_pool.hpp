@@ -1,6 +1,6 @@
-//==--- glow/backend/vk/vulkan_command_pool.hpp ------------ -*- C++ -*- ---==//
+//==--- snowflake/backend/vk/vulkan_command_pool.hpp ------- -*- C++ -*- ---==//
 //
-//                              Ripple - Glow
+//                                Snowflake
 //
 //                      Copyright (c) 2020 Rob Clucas
 //
@@ -13,14 +13,14 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_BACKEND_VK_VULKAN_COMMAND_POOL_HPP
-#define RIPPLE_GLOW_BACKEND_VK_VULKAN_COMMAND_POOL_HPP
+#ifndef SNOWFLAKE_BACKEND_VK_VULKAN_COMMAND_POOL_HPP
+#define SNOWFLAKE_BACKEND_VK_VULKAN_COMMAND_POOL_HPP
 
 #include "vulkan_headers.hpp"
 #include <ripple/core/util/portability.hpp>
 #include <vector>
 
-namespace ripple::glow::backend {
+namespace snowflake::backend {
 
 /// Forward declaration of the vulkan driver.
 class VulkanDriver;
@@ -42,10 +42,10 @@ class VulkanCommandPool {
   /// pool.
   /// \param driver             The driver which can be used to create the pool.
   /// \param queue_family_index The index of the queue family for the pool.
-  VulkanCommandPool(DriverPtr driver, uint32_t queue_family_index);
+  VulkanCommandPool(DriverPtr driver, uint32_t queue_family_index) noexcept;
 
   /// Destructor to clean up the command pool.
-  ~VulkanCommandPool();
+  ~VulkanCommandPool() noexcept;
 
   /// Move constructor to move the \p other pool to this one.
   /// \param other The other pool to move.
@@ -61,31 +61,31 @@ class VulkanCommandPool {
   auto operator=(VulkanCommandPool&&) noexcept -> VulkanCommandPool&;
 
   /// Copy assignment operator -- deleted because moving is not allowed.
-  auto operator=(const VulkanCommandPool&) -> VulkanCommandPool& = delete;
+  auto operator=(const VulkanCommandPool&) = delete;
 
   //==--- [interface] ------------------------------------------------------==//
 
   /// Destroys the command pool.
-  auto destroy() -> void;
+  auto destroy() noexcept -> void;
 
   /// Requests a command buffer from the pool.
-  auto request_command_buffer() -> VkCommandBuffer;
+  auto request_command_buffer() noexcept -> VkCommandBuffer;
 
   /// Requests a secondary command buffer from the pool.
-  auto request_secondary_command_buffer() -> VkCommandBuffer;
+  auto request_secondary_command_buffer() noexcept -> VkCommandBuffer;
 
   /// Resets the command pool.
-  auto reset() -> void;
+  auto reset() noexcept -> void;
 
  private:
-  BufferContainer _buffers;                          //!< Primary buffers.
-  BufferContainer _secondary_buffers;                //!< Secondary buffers.
-  DriverPtr       _driver          = nullptr;        //!< The driver.
-  VkCommandPool   _pool            = VK_NULL_HANDLE; //!< Command pool.
-  unsigned        _index           = 0;              //!< Primary index.
-  unsigned        _secondary_index = 0;              //!< Secondary index.
+  BufferContainer buffers_;                          //!< Primary buffers.
+  BufferContainer secondary_buffers_;                //!< Secondary buffers.
+  DriverPtr       driver_          = nullptr;        //!< The driver.
+  VkCommandPool   pool_            = VK_NULL_HANDLE; //!< Command pool.
+  unsigned        index_           = 0;              //!< Primary index.
+  unsigned        secondary_index_ = 0;              //!< Secondary index.
 };
 
-} // namespace ripple::glow::backend
+} // namespace snowflake::backend
 
-#endif // RIPPLE_GLOW_BACKEND_VK_VULKAN_COMMAND_POOL_HPP
+#endif // SNOWFLAKE_BACKEND_VK_VULKAN_COMMAND_POOL_HPP

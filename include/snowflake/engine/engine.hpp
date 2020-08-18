@@ -1,28 +1,27 @@
-//==--- ripple/glow/engine/engine.hpp ---------------------- -*- C++ -*- ---==//
+//==--- snowflake/engine/engine.hpp ------------------------ -*- C++ -*- ---==//
 //
-//                            Ripple - Glow
+//                              Snowflake
 //
-//                      Copyright (c) 2020 Ripple
+//                      Copyright (c) 2020 Rob Clucas
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
 //==------------------------------------------------------------------------==//
 //
 /// \file  engine.hpp
-/// \brief This file defines a engine, which is an interface to glow resources.
+/// \brief This file defines a engine, which is an interface to all resources.
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_ENGINE_ENGINE_HPP
-#define RIPPLE_GLOW_ENGINE_ENGINE_HPP
+#ifndef SNOWFLAKE_ENGINE_ENGINE_HPP
+#define SNOWFLAKE_ENGINE_ENGINE_HPP
 
-#include "../backend/platform/platform.hpp"
-#include "../backend/vk/vulkan_driver.hpp"
-#include <ripple/core/util/portability.hpp>
+#include <snowflake/backend/platform/platform.hpp>
+#include <snowflake/backend/vk/vulkan_driver.hpp>
 
-namespace ripple::glow {
+namespace snowflake {
 
-/// The engine class provides the interface to all system components in glow. It
+/// The engine class provides the interface to all system components. It
 /// holds a platform, and a backend driver, and a renderer.
 class Engine {
  public:
@@ -38,10 +37,10 @@ class Engine {
 
   /// Creates the engine, returning a pointer to the newly created engine. If
   /// the engine could not be created, a nullptr is returned.
-  static auto create() -> Engine*;
+  static auto create() noexcept -> Engine*;
 
   /// Destructor -- defaulted.
-  ~Engine();
+  ~Engine() noexcept;
 
   //==--- [deleted] --------------------------------------------------------==//
 
@@ -59,32 +58,32 @@ class Engine {
   //==--- [interface] ------------------------------------------------------==//
 
   /// Returns a pointer to the platform.
-  auto platform() -> Platform* {
-    return &_platform;
+  auto platform() noexcept -> Platform* {
+    return &platform_;
   }
 
   /// Returns a const pointer to the platform.
-  auto platform() const -> const Platform* {
-    return &_platform;
+  auto platform() const noexcept -> const Platform* {
+    return &platform_;
   }
 
   /// Returns a pointer to the driver.
-  auto driver() -> Driver* {
-    return _driver;
+  auto driver() noexcept -> Driver* {
+    return driver_;
   }
 
  private:
   //==--- [construction] ---------------------------------------------------==//
 
   /// Constructor to create the engine.
-  Engine();
+  Engine() noexcept;
 
   //==--- [members] --------------------------------------------------------==//
 
-  Platform _platform;         //!< The platform to run on.
-  Driver*  _driver = nullptr; //!< The driver for engine.
+  Platform platform_;         //!< The platform to run on.
+  Driver*  driver_ = nullptr; //!< The driver for engine.
 };
 
-} // namespace ripple::glow
+} // namespace snowflake
 
-#endif // RIPPLE_GLOW_ENGINE_ENGINE_HPP
+#endif // SNOWFLAKE_ENGINE_ENGINE_HPP

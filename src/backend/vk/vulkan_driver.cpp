@@ -1,8 +1,8 @@
-//==--- glow/src/backend/vk/vulkan_driver.cpp -------------- -*- C++ -*- ---==//
+//==--- snowflake/src/backend/vk/vulkan_driver.cpp --------- -*- C++ -*- ---==//
 //
-//                            Ripple - Glow
+//                              Snowflake
 //
-//                      Copyright (c) 2020 Ripple
+//                      Copyright (c) 2020 Rob Clucas
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <ripple/core/log/logger.hpp>
-#include <ripple/glow/backend/vk/vulkan_driver.hpp>
+#include <snowflake/backend/vk/vulkan_driver.hpp>
+#include <wrench/log/logger.hpp>
 
 #ifndef _WIN32
   #include <dlfcn.h>
@@ -22,18 +22,20 @@
   #include <windows.h>
 #endif
 
-namespace ripple::glow::backend {
+namespace snowflake ::backend {
 
-//==--- [interface] --------------------------------------------------------==//
+//==--- [interface]
+//--------------------------------------------------------==//
 
 auto VulkanDriver::create(
-  const VulkanDriver::Platform& platform, uint16_t threads) -> VulkanDriver* {
+  const VulkanDriver::Platform& platform, uint16_t threads) noexcept
+  -> VulkanDriver* {
   static VulkanDriver driver(platform, threads);
   return &driver;
 }
 
-auto VulkanDriver::destroy() -> void {
-  if (_destroyed) {
+auto VulkanDriver::destroy() noexcept -> void {
+  if (destroyed_) {
     return;
   }
 
@@ -41,64 +43,63 @@ auto VulkanDriver::destroy() -> void {
 
   destroy_frame_data();
   destroy_surface_context();
-
-  // Clean up the context.
-  _context.destroy();
+  context_.destroy();
 
   // Instance cleans up the rest on destruction
-  _destroyed = true;
+  destroyed_ = true;
 }
 
 //==--- [con/destruction] --------------------------------------------------==//
 
 VulkanDriver::VulkanDriver(
-  const VulkanDriver::Platform& platform, uint16_t threads)
-: _num_threads(threads), _destroyed(false) {
-  for (auto& cmd_buffer_counter : _cmd_buffer_counters) {
+  const VulkanDriver::Platform& platform, uint16_t threads) noexcept
+: num_threads_(threads), destroyed_(false) {
+  for (auto& cmd_buffer_counter : cmd_buffer_counters_) {
     cmd_buffer_counter.store(0, std::memory_order_relaxed);
   }
 
   auto ins_extensions = platform.instance_extensions();
   auto dev_extensions = platform.device_extensions();
-  if (!_context.create_instance_and_device(
+  if (!context_.create_instance_and_device(
         ins_extensions.data(),
         ins_extensions.size(),
         dev_extensions.data(),
         dev_extensions.size(),
-        _surface_context.surface())) {
-    logger_t::logger().flush();
+        surface_context_.surface())) {
+    wrench::Log::logger().flush();
     assert(false && "VulkanDriver could not create VulkanContext");
   }
-  log_info("Created driver vulkan context.");
+  wrench::log_info("Created driver vulkan context.");
 
-  _surface_context.surface() =
-    platform.create_surface(_context.instance(), _context.physical_device());
+  surface_context_.surface() =
+    platform.create_surface(context_.instance(), context_.physical_device());
 
-  if (_surface_context.surface() == VK_NULL_HANDLE) {
+  if (surface_context_.surface() == VK_NULL_HANDLE) {
     assert(false && "Failed to create vulkan surface.");
   }
 
-  if (!_surface_context.init(
-        _context, _present_mode, platform.width(), platform.height())) {
+  if (!surface_context_.init(
+        context_, present_mode_, platform.width, platform.height)) {
     assert(false && "Failed to create the surface context.");
   }
 
   create_frame_data();
 }
 
-VulkanDriver::~VulkanDriver() {
+VulkanDriver::~VulkanDriver() noexcept {
   destroy();
 }
 
 //==--- [interface] --------------------------------------------------------==//
 
-auto VulkanDriver::submit(CommandBufferHandle buffer) -> void {
+auto VulkanDriver::submit(CommandBufferHandle buffer) noexcept -> void {
   current_command_buffer_counter().fetch_sub(1, std::memory_order_relaxed);
 }
 
 //==--- [frame interface implementation] -----------------------------------==//
 
-auto VulkanDriver::begin_frame(VulkanDriver::Platform& platform) -> bool {
+auto VulkanDriver::begin_frame(VulkanDriver::Platform& platform) noexcept
+  -> bool {
   advance_frame_data();
 
   // Try and acquire the next image, if this fails, we lost the swapchain, or
@@ -109,37 +110,39 @@ auto VulkanDriver::begin_frame(VulkanDriver::Platform& platform) -> bool {
   return true;
 }
 
-auto VulkanDriver::end_frame(VulkanDriver::Platform& platform) -> bool {
+auto VulkanDriver::end_frame(VulkanDriver::Platform& platform) noexcept
+  -> bool {
   // TODO: Add call to reset_frame_data() when there is frame data which
   // required resetting.
-  _acquired_swapchain = false;
+  acquired_swapchain_ = false;
 
-  if (!_surface_context.present(_context, current_command_buffer_counter())) {
-    // Reset the swapchain ...
+  if (!surface_context_.present(context_, current_command_buffer_counter())) {
+    // TODO: Reset the swapchain ...
     return false;
   }
 
   // Managed to present, check if the swapchain changed:
-  if (_present_mode != _surface_context.present_mode()) {
-    if (!_surface_context.reinit(
-          _context, _present_mode, platform.width(), platform.height())) {
-      log_error("Failed to reinitialize surface context during presentation.");
+  if (present_mode_ != surface_context_.present_mode()) {
+    if (!surface_context_.reinit(
+          context_, present_mode_, platform.width, platform.height)) {
+      wrench::log_error(
+        "Failed to reinitialize surface context during presentation.");
     };
   }
   return true;
 }
 
-auto VulkanDriver::flush_pending_submissions() -> void {
+auto VulkanDriver::flush_pending_submissions() noexcept -> void {
   // Check submission queues, and submit them ...
 }
 
-auto VulkanDriver::wait_idle() -> void {
+auto VulkanDriver::wait_idle() noexcept -> void {
   // End frame ...
   flush_pending_submissions();
-  if (_context.device() != VK_NULL_HANDLE) {
-    auto result = vkDeviceWaitIdle(_context.device());
+  if (context_.device() != VK_NULL_HANDLE) {
+    auto result = vkDeviceWaitIdle(context_.device());
     if (result != VK_SUCCESS) {
-      log_error("Failed to idle device : {}", result);
+      wrench::log_error("Failed to idle device : {}", result);
     }
   }
 
@@ -150,28 +153,29 @@ auto VulkanDriver::wait_idle() -> void {
   // Reset descriptor set allocators
 
   // Reset all frame data:
-  for (auto& frame : _frames) {
+  for (auto& frame : frames_) {
     frame.reset();
   }
 }
 
-//==--- [private] ----------------------------------------------------------==//
+//==--- [private]
+//----------------------------------------------------------==//
 
-auto VulkanDriver::acquire_next_image(VulkanDriver::Platform& platform)
+auto VulkanDriver::acquire_next_image(VulkanDriver::Platform& platform) noexcept
   -> bool {
-  if (_acquired_swapchain) {
+  if (acquired_swapchain_) {
     return true;
   }
 
   VkResult result = VK_SUCCESS;
   do {
-    result = _context.device_table()->vkAcquireNextImageKHR(
-      _context.device(),
-      _surface_context.swapchain(),
+    result = context_.device_table()->vkAcquireNextImageKHR(
+      context_.device(),
+      surface_context_.swapchain(),
       std::numeric_limits<uint64_t>::max(),
-      _surface_context.image_available_semaphore(),
+      surface_context_.image_available_semaphore(),
       VK_NULL_HANDLE,
-      &_surface_context.current_swap_index());
+      &surface_context_.current_swap_index());
 
 #ifdef ANDROID
     // With the pre-transform for mobile, on adroid this might return
@@ -182,7 +186,7 @@ auto VulkanDriver::acquire_next_image(VulkanDriver::Platform& platform)
 #endif
 
     if (result == VK_SUCCESS) {
-      _acquired_swapchain = true;
+      acquired_swapchain_ = true;
 
       // Poll the platform, so that we get good latency:
       platform.poll_input();
@@ -195,8 +199,8 @@ auto VulkanDriver::acquire_next_image(VulkanDriver::Platform& platform)
                                  result == VK_ERROR_OUT_OF_DATE_KHR;
     if (swapchain_error) {
       // Need to recreate the swapchain ...
-      _surface_context.reinit(
-        _context, _present_mode, platform.width(), platform.height());
+      surface_context_.reinit(
+        context_, present_mode_, platform.width, platform.height);
       continue;
     }
     return false;
@@ -204,45 +208,45 @@ auto VulkanDriver::acquire_next_image(VulkanDriver::Platform& platform)
   return true;
 }
 
-auto VulkanDriver::advance_frame_data() -> void {
+auto VulkanDriver::advance_frame_data() noexcept -> void {
   // Flush the frame, incase there are pending operations ...
 
-  if (_frames.empty()) {
-    log_error("No frame data for driver!");
+  if (frames_.empty()) {
+    wrench::log_error("No frame data for driver!");
   }
 
-  _frame_index = (_frame_index + 1) % num_frame_contexts_v;
+  frame_index_ = (frame_index_ + 1) % num_frame_contexts;
   current_frame().reset();
 }
 
-auto VulkanDriver::create_frame_data() -> void {
-  for (uint8_t i = 0; i < num_frame_contexts_v; ++i) {
-    _frames.emplace_back(
+auto VulkanDriver::create_frame_data() noexcept -> void {
+  for (uint8_t i = 0; i < num_frame_contexts; ++i) {
+    frames_.emplace_back(
       this,
-      _context.graphics_queue_family_index(),
-      _context.compute_queue_family_index(),
-      _context.transfer_queue_family_index());
+      context_.graphics_queue_family_index(),
+      context_.compute_queue_family_index(),
+      context_.transfer_queue_family_index());
   }
 }
 
 //==--- [destruction] ------------------------------------------------------==//
 
-auto VulkanDriver::destroy_device() -> void {
-  vkDestroyDevice(_context.device(), nullptr);
+auto VulkanDriver::destroy_device() noexcept -> void {
+  vkDestroyDevice(context_.device(), nullptr);
 }
 
-auto VulkanDriver::destroy_frame_data() -> void {
-  for (auto& frame : _frames) {
+auto VulkanDriver::destroy_frame_data() noexcept -> void {
+  for (auto& frame : frames_) {
     frame.destroy();
   }
 }
 
-auto VulkanDriver::destroy_instance() -> void {
-  vkDestroyInstance(_context.instance(), nullptr);
+auto VulkanDriver::destroy_instance() noexcept -> void {
+  vkDestroyInstance(context_.instance(), nullptr);
 }
 
-auto VulkanDriver::destroy_surface_context() -> void {
-  _surface_context.destroy(_context);
+auto VulkanDriver::destroy_surface_context() noexcept -> void {
+  surface_context_.destroy(context_);
 }
 
-} // namespace ripple::glow::backend
+} // namespace snowflake::backend

@@ -1,8 +1,8 @@
-//==--- glow/backend/platform/sdl_platform.hpp ------------- -*- C++ -*- ---==//
+//==--- snowflake /backend/platform/sdl_platform.hpp ------- -*- C++ -*- ---==//
 //
-//                              Ripple - Glow
+//                              Snowflake
 //
-//                      Copyright (c) 2020 Ripple
+//                      Copyright (c) 2020 Rob Clucas
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
@@ -14,41 +14,39 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_BACKEND_PLATFORM_SDL_PLATFORM_HPP
-#define RIPPLE_GLOW_BACKEND_PLATFORM_SDL_PLATFORM_HPP
+#ifndef SNOWFLAKE_BACKEND_PLATFORM_SDL_PLATFORM_HPP
+#define SNOWFLAKE_BACKEND_PLATFORM_SDL_PLATFORM_HPP
 
 #include "platform_base.hpp"
+#include <snowflake/util/portability.hpp>
 #include <SDL.h>
-#include <string>
 
-namespace ripple::glow::backend {
+namespace snowflake::backend {
 
 /// The SdlPlatform wraps SDL functionality which is common for all platforms
 /// which use SDL.
 class SdlPlatform : public Platform<SdlPlatform> {
   using WindowPtr    = SDL_Window*;           //!< Window pointer type.
   using BasePlatform = Platform<SdlPlatform>; //!< Base platform type.
-  WindowPtr _window  = nullptr;               //!< Pointer to the window.
 
  public:
   //==--- [construction] ---------------------------------------------------==//
 
   /// Constructor to create a default initialized platform.
-  SdlPlatform();
+  SdlPlatform() noexcept;
 
   /// Constructor to initialize the platform with a \p title, and a \p width and
   /// \p height.
-  SdlPlatform(const std::string& title, uint32_t width, uint32_t height);
+  SdlPlatform(const char* title, uint32_t width, uint32_t height) noexcept;
 
   // clang-format off
-
   /// Copy constructor, deleted.
   SdlPlatform(const SdlPlatform&)     = delete;
   /// Move constructor, defaulted.
   SdlPlatform(SdlPlatform&&) noexcept = default;
 
   /// Destroys SDL.
-  ~SdlPlatform();
+  ~SdlPlatform() noexcept;
 
   //==--- [operator overloads] ---------------------------------------------==//
 
@@ -56,7 +54,6 @@ class SdlPlatform : public Platform<SdlPlatform> {
   auto operator=(const SdlPlatform&) -> SdlPlatform&     = delete;
   /// Move assignment, defaulted.
   auto operator=(SdlPlatform&&) noexcept -> SdlPlatform& = default;
-
   // clang-format on
 
   //==--- [interface] ------------------------------------------------------==//
@@ -65,39 +62,40 @@ class SdlPlatform : public Platform<SdlPlatform> {
   /// \param instance The instance to create the surface for.
   /// \param device   The device to create the surface from.
   auto create_vulkan_surface(VkInstance instance, VkPhysicalDevice device) const
-    -> VkSurfaceKHR;
+    noexcept -> VkSurfaceKHR;
 
   /// Gets the vulkan device extensions for the platform.
-  auto get_device_extensions() const -> ExtVector;
+  auto get_device_extensions() const noexcept -> ExtVector;
 
   /// Gets the vulkan instance extensions for the platform.
-  auto get_instance_extensions() const -> ExtVector;
+  auto get_instance_extensions() const noexcept -> ExtVector;
 
   /// Returns true if the platform is still alive.
-  auto is_alive_impl() const -> bool;
+  auto is_alive_impl() const noexcept -> bool;
 
   /// Sets the title of the platform.
   /// \param title The title for the platform.
-  auto set_title_impl(const std::string& title) -> void;
+  auto set_title_impl(const char* title) noexcept -> void;
 
   /// Resizes the platform surface.
-  auto resize_impl() -> void;
+  auto resize_impl() noexcept -> void;
 
   /// Polls the input.
   /// \todo change this so that the events go somewhere.
-  auto poll_input_impl() -> void;
+  auto poll_input_impl() noexcept -> void;
 
  private:
-  bool _is_alive = true; //!< If the platform is alive.
+  WindowPtr window_   = nullptr; //!< Pointer to the window.
+  bool      is_alive_ = true;    //!< If the platform is alive.
 
   /// Initializes the vulkan loader, returning true if the loading was
   /// successul.
-  ripple_no_discard auto initialize_vulkan_loader() const -> bool;
+  snowflake_nodiscard auto initialize_vulkan_loader() const noexcept -> bool;
 
   /// Initializes the platform.
-  auto initialize() -> void;
+  auto initialize() noexcept -> void;
 };
 
-} // namespace ripple::glow::backend
+} // namespace snowflake::backend
 
-#endif // RIPPLE_GLOW_VK_PLATFORM_SDL_PLATFORM_HPP
+#endif // SNOWFLAKE_BACKEND_PLATFORM_SDL_PLATFORM_HPP

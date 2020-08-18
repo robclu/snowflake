@@ -1,6 +1,6 @@
-//==--- glow/backend/platform/platform.hpp ----------------- -*- C++ -*- ---==//
+//==--- snowflake/backend/platform/platform.hpp ------------ -*- C++ -*- ---==//
 //
-//                              Ripple - Glow
+//                                Snowflake
 //
 //                      Copyright (c) 2020 Rob Clucas
 //
@@ -13,27 +13,27 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef RIPPLE_GLOW_BACKEND_PLATFORM_PLATFORM_HPP
-#define RIPPLE_GLOW_BACKEND_PLATFORM_PLATFORM_HPP
+#ifndef SNOWFLAKE_BACKEND_PLATFORM_PLATFORM_HPP
+#define SNOWFLAKE_BACKEND_PLATFORM_PLATFORM_HPP
 
-#if defined(GLOW_HEADLESS_PLATFORM)
+#if defined(SNOWFLAKE_HEADLESS_PLATFORM)
 #else
   #include "sdl_platform.hpp"
 #endif
 
-namespace ripple::glow::backend {
+namespace snowflake::backend {
 
 /// Alias for the type of the platform to create. The platform is specific to
 /// what we are running on, unless another flag has been defined in the build
 /// to specify the type of the platform, such as a headless platform, otherwise
 /// we just use the SDL platform since it handles all common platforms.
 using PlatformType =
-#if defined(GLOW_HEADLESS_PLATFORM)
+#if defined(SNOWFLAKE_HEADLESS_PLATFORM)
   HeadlessPlatform;
 #else
   SdlPlatform;
 #endif
 
-} // namespace ripple::glow::backend
+} // namespace snowflake::backend
 
-#endif // RIPPLE_GLOW_BACKEND_PLATFORM_PLATFORM_HPP
+#endif // SNOWFLAKE_BACKEND_PLATFORM_PLATFORM_HPP

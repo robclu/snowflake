@@ -1,6 +1,8 @@
-#==--- ripple/glow/external/CMakeLists.txt ----------------------------------==#
+#==--- snowflake/external/CMakeLists.txt ------------------------------------==#
 #
-#                      Copyright (c) 2020 Ripple
+#                                 Snowflake
+#
+#                      Copyright (c) 2020 Rob Clucas
 #
 #  This file is distributed under the MIT License. See LICENSE for details.
 #
@@ -22,8 +24,12 @@ elseif(APPLE)
   endif()
 endif()
 
-add_compile_definitions(GLOW_RESIZABLE_WINDOW=0)
+add_compile_definitions(SNOWFLAKE_RESIZABLE_WINDOW=0)
 
 add_subdirectory(volk)
+
+#==--- [wrench] -------------------------------------------------------------==#
+
+add_subdirectory(wrench)
 
 #==--------------------------------------------------------------------------==#

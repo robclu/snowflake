@@ -1,8 +1,8 @@
-//==--- glow/src/window/window.cpp ------------------------- -*- C++ -*- ---==//
+//==--- snowflake/src/window/window.cpp -------------------- -*- C++ -*- ---==//
 //
-//                            Ripple - Glow
+//                              Snowflake
 //
-//                      Copyright (c) 2020 Ripple
+//                      Copyright (c) 2020 Rob Clucas
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
@@ -13,46 +13,46 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <ripple/core/log/logger.hpp>
-#include <ripple/glow/window/window.hpp>
+#include <snowflake/window/window.hpp>
+#include <wrench/log/logger.hpp>
 
-namespace ripple::glow {
+namespace snowflake {
 
 //==--- [con/destruction] --------------------------------------------------==//
 
 Window::Window(
-  Window::EnginePtr  engine,
-  const std::string& title,
-  uint32_t           width,
-  uint32_t           height)
-: _engine(engine) {
+  Window::EnginePtr engine,
+  const char*       title,
+  uint32_t          width,
+  uint32_t          height) noexcept
+: engine_(engine) {
   if (!init(title, width, height)) {
-    log_error("Failed to initialize window.");
+    wrench::log_error("Failed to initialize window.");
   }
 }
 
 //==--- [interface] --------------------------------------------------------==//
 
-auto Window::is_alive() const -> bool {
-  return _engine->platform()->is_alive();
+auto Window::is_alive() const noexcept -> bool {
+  return engine_->platform()->is_alive();
 }
 
-auto Window::poll_input() -> void {
-  _engine->platform()->poll_input();
+auto Window::poll_input() noexcept -> void {
+  engine_->platform()->poll_input();
 }
 
 //==--- [private] ----------------------------------------------------------==//
 
-auto Window::init(const std::string& title, uint32_t width, uint32_t height)
+auto Window::init(const char* title, uint32_t width, uint32_t height) noexcept
   -> bool {
-  if (_engine == nullptr) {
-    log_error("Window requires a valid engine.");
+  if (engine_ == nullptr) {
+    wrench::log_error("Window requires a valid engine.");
     return false;
   }
 
-  auto* platform = _engine->platform();
+  auto* platform = engine_->platform();
   if (platform == nullptr) {
-    log_error("Failed to create the platform.");
+    wrench::log_error("Failed to create the platform.");
     return false;
   }
 
@@ -62,4 +62,4 @@ auto Window::init(const std::string& title, uint32_t width, uint32_t height)
   return true;
 }
 
-} // namespace ripple::glow
+} // namespace snowflake

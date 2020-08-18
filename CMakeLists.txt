@@ -7,9 +7,9 @@
 #==--------------------------------------------------------------------------==#
 
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
-project(glow VERSION 0.1.0 LANGUAGES CXX)
+project(snowflake VERSION 0.1.0 LANGUAGES CXX)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${glow_SOURCE_DIR}/cmake")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 17)
 
 #===== [platform] =============================================================#
@@ -43,7 +43,6 @@ else()
 endif()
 
 #===== [subdirs] ==============================================================#
-
 
 add_subdirectory(external)
 add_subdirectory(apps)
