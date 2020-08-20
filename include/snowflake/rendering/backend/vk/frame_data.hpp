@@ -1,4 +1,4 @@
-//==--- snowflake/backend/vk/frame_data.hpp ---------------- -*- C++ -*- ---==//
+//==--- snowflake/rendering/backend/vk/frame_data.hpp ------ -*- C++ -*- ---==//
 //
 //                                Snowflake
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_BACKEND_VK_FRAME_DATA_HPP
-#define SNOWFLAKE_BACKEND_VK_FRAME_DATA_HPP
+#ifndef SNOWFLAKE_RENDERING_BACKEND_VK_FRAME_DATA_HPP
+#define SNOWFLAKE_RENDERING_BACKEND_VK_FRAME_DATA_HPP
 
 #include "vulkan_command_buffer.hpp"
 #include "vulkan_command_pool.hpp"
@@ -134,4 +134,4 @@ struct FrameData {
 
 } // namespace snowflake::backend
 
-#endif // SNOWFLAKE_BACKEND_VK_FRAME_DATA_HPP
+#endif // SNOWFLAKE_RENDERING_BACKEND_VK_FRAME_DATA_HPP

@@ -1,6 +1,6 @@
-//==--- snowflake/window/window.hpp ------------------------ -*- C++ -*- ---==//
+//==--- snowflake/window.hpp ------------------------------- -*- C++ -*- ---==//
 //
-//                              Snowflake
+//                                Snowflake
 //
 //                      Copyright (c) 2020 Rob Clucas
 //
@@ -13,12 +13,12 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_WINDOW_WINDOW_HPP
-#define SNOWFLAKE_WINDOW_WINDOW_HPP
+#ifndef SNOWFLAKE_WINDOW_HPP
+#define SNOWFLAKE_WINDOW_HPP
 
-#include <snowflake/engine.hpp>
-#include <snowflake/backend/platform/platform.hpp>
-#include <snowflake/util/portability.hpp>
+#include "engine.hpp"
+#include "rendering/backend/platform/platform.hpp"
+#include "util/portability.hpp"
 
 namespace snowflake {
 
@@ -87,4 +87,4 @@ class Window {
 
 } // namespace snowflake
 
-#endif // SNOWFLAKE_WINDOW_WINDOW_HPP
+#endif // SNOWFLAKE_WINDOW_HPP

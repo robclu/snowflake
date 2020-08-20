@@ -1,4 +1,4 @@
-//==--- snowflake/src/backend/vk/vulkan_command_buffer.cpp -- -*- C++ -*----==//
+//==--- src/rendering/backend/vk/vulkan_command_buffer.cpp -- -*- C++ -*----==//
 //
 //                                Snowflake
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <snowflake/backend/vk/vulkan_command_buffer.hpp>
-#include <snowflake/backend/vk/vulkan_driver.hpp>
+#include <snowflake/rendering/backend/vk/vulkan_command_buffer.hpp>
+#include <snowflake/rendering/backend/vk/vulkan_driver.hpp>
 
 namespace snowflake::backend {
 

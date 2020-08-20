@@ -1,4 +1,4 @@
-//==--- snowflake/backend/vk/vulkan_command_pool.hpp ------- -*- C++ -*- ---==//
+//==--- ../rendering/backend/vk/vulkan_command_pool.hpp ---- -*- C++ -*- ---==//
 //
 //                                Snowflake
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_BACKEND_VK_VULKAN_COMMAND_POOL_HPP
-#define SNOWFLAKE_BACKEND_VK_VULKAN_COMMAND_POOL_HPP
+#ifndef SNOWFLAKE_RENDERING_BACKEND_VK_VULKAN_COMMAND_POOL_HPP
+#define SNOWFLAKE_RENDERING_BACKEND_VK_VULKAN_COMMAND_POOL_HPP
 
 #include "vulkan_headers.hpp"
 #include <ripple/core/util/portability.hpp>
@@ -88,4 +88,4 @@ class VulkanCommandPool {
 
 } // namespace snowflake::backend
 
-#endif // SNOWFLAKE_BACKEND_VK_VULKAN_COMMAND_POOL_HPP
+#endif // SNOWFLAKE_RENDERING_BACKEND_VK_VULKAN_COMMAND_POOL_HPP

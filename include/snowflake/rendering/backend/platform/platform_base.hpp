@@ -1,8 +1,8 @@
-//==--- snowflake/backend/platform/platform_base.hpp ------- -*- C++ -*- ---==//
+//==--- ../rendering/backend/platform/platform_base.hpp ---  -*- C++ -*- ---==//
 //
-//                              Ripple - Glow
+//                              Snowflake
 //
-//                      Copyright (c) 2020 Ripple
+//                      Copyright (c) 2020 Rob Clucas
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
@@ -13,13 +13,12 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_BACKEND_PLATFORM_PLATFORM_BASE_HPP
-#define SNOWFLAKE_BACKEND_PLATFORM_PLATFORM_BASE_HPP
+#ifndef SNOWFLAKE_RENDERING_BACKEND_PLATFORM_PLATFORM_BASE_HPP
+#define SNOWFLAKE_RENDERING_BACKEND_PLATFORM_PLATFORM_BASE_HPP
 
 #include "platform_fwd.hpp"
-#include <snowflake/backend/vk/vulkan_headers.hpp>
-#include <ripple/core/util/portability.hpp>
-#include <string>
+#include <snowflake/rendering/backend/vk/vulkan_headers.hpp>
+#include <snowflake/util/portability.hpp>
 #include <type_traits>
 #include <vector>
 
@@ -130,4 +129,4 @@ class Platform {
 
 } // namespace snowflake::backend
 
-#endif // SNOWFLAKE_BACKEND_PLATFORM_PLATFORM_HPP
+#endif // SNOWFLAKE_RENDERING_BACKEND_PLATFORM_PLATFORM_HPP

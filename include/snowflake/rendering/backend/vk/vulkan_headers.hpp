@@ -1,4 +1,4 @@
-//==--- snwoflake/backend/vulkan_headers.hpp --------------- -*- C++ -*- ---==//
+//==--- snwoflake/rendering/backend/vulkan_headers.hpp ----- -*- C++ -*- ---==//
 //
 //                              Snowflake
 //
@@ -13,10 +13,10 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_BACKEND_VULKAN_VULKAN_HEADERS_HPP
-#define SNOWFLAKE_BACKEND_VULKAN_VULKAN_HEADERS_HPP
+#ifndef SNOWFLAKE_RENDERING_BACKEND_VULKAN_VULKAN_HEADERS_HPP
+#define SNOWFLAKE_RENDERING_BACKEND_VULKAN_VULKAN_HEADERS_HPP
 
 #include "volk.h"
 #include <cstdlib>
 
-#endif // SNOWFLAKE_BACKEND_VULKAN_VULKAN_HEADERS_HPP
+#endif // SNOWFLAKE_RENDERING_BACKEND_VULKAN_VULKAN_HEADERS_HPP

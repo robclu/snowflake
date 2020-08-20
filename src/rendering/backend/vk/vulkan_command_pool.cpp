@@ -1,4 +1,4 @@
-//==--- wrench/src/backend/vk/vulkan_command_pool.cpp ------ -*- C++ -*- ---==//
+//==--- src/rendering/backend/vk/vulkan_command_pool.cpp --- -*- C++ -*- ---==//
 //
 //                              Snowflake
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <snowflake/backend/vk/vulkan_command_pool.hpp>
-#include <snowflake/backend/vk/vulkan_driver.hpp>
+#include <snowflake/rendering/backend/vk/vulkan_command_pool.hpp>
+#include <snowflake/rendering/backend/vk/vulkan_driver.hpp>
 #include <wrench/log/logger.hpp>
 
 namespace snowflake::backend {

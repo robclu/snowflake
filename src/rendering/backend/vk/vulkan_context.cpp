@@ -1,4 +1,4 @@
-//==--- snowflake/src/backend/vk/vulkan_context.cpp -------- -*- C++ -*- ---==//
+//==--- src/rendering/backend/vk/vulkan_context.cpp -------- -*- C++ -*- ---==//
 //
 //                              Snowflake
 //
@@ -13,7 +13,7 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <snowflake/backend/vk/vulkan_context.hpp>
+#include <snowflake/rendering/backend/vk/vulkan_context.hpp>
 #include <wrench/log/logger.hpp>
 #include <algorithm>
 #include <cstring>

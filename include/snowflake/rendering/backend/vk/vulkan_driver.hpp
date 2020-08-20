@@ -1,4 +1,4 @@
-//==--- snowflake/backend/vk/vulkan_driver.hpp ------------- -*- C++ -*- ---==//
+//==--- snowflake/rendering/backend/vk/vulkan_driver.hpp --- -*- C++ -*- ---==//
 //
 //                                Snowflake
 //
@@ -13,14 +13,14 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_BACKEND_VK_VULKAN_DRIVER_HPP
-#define SNOWFLAKE_BACKEND_VK_VULKAN_DRIVER_HPP
+#ifndef SNOWFLAKE_RENDERING_BACKEND_VK_VULKAN_DRIVER_HPP
+#define SNOWFLAKE_RENDERING_BACKEND_VK_VULKAN_DRIVER_HPP
 
 #include "driver_allocator.hpp"
 #include "frame_data.hpp"
 #include "vulkan_context.hpp"
 #include "vulkan_surface_context.hpp"
-#include <snowflake/backend/platform/platform.hpp>
+#include <snowflake/rendering/backend/platform/platform.hpp>
 #include <array>
 
 /// Defines the number of frame contexts used by the driver.
@@ -231,4 +231,4 @@ auto VulkanDriver::request_command_buffer(size_t thread_index) noexcept
 
 } // namespace snowflake::backend
 
-#endif // SNOWFLAKE_BACKEND_VK_VULKAN_DRIVER_HPP
+#endif // SNOWFLAKE_RENDERING_BACKEND_VK_VULKAN_DRIVER_HPP

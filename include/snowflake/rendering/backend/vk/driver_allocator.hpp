@@ -1,4 +1,4 @@
-//==--- snowflake/backend/vk/driver_allocator.hpp ---------- -*- C++ -*- ---==//
+//==--- snowflake/rendering/backend/vk/driver_allocator.hpp  -*- C++ -*- ---==//
 //
 //                                Snowflake
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_BACKEND_VK_DRIVER_ALLOCATOR_HPP
-#define SNOWFLAKE_BACKEND_VK_DRIVER_ALLOCATOR_HPP
+#ifndef SNOWFLAKE_RENDERING_BACKEND_VK_DRIVER_ALLOCATOR_HPP
+#define SNOWFLAKE_RENDERING_BACKEND_VK_DRIVER_ALLOCATOR_HPP
 
 #include "vulkan_command_buffer.hpp"
 #include <wrench/memory/allocator.hpp>
@@ -69,4 +69,4 @@ struct DriverAllocator {
 
 } // namespace snowflake::backend
 
-#endif // SNOWFLAKE_BACKEND_VK_DRIVER_ALLOCATOR_HPP
+#endif // SNOWFLAKE_RENDERING_BACKEND_VK_DRIVER_ALLOCATOR_HPP

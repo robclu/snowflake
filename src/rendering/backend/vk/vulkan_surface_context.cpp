@@ -1,8 +1,8 @@
-//==--- snowflake/src/backend/vk/vulkan_surface_context.cpp --*- C++ -*- ---==//
+//==--- src/rendering/backend/vk/vulkan_surface_context.cpp --*- C++ -*- ---==//
 //
 //                              Snowflake
 //
-//                      Copyright (c) 2020 Ripple
+//                      Copyright (c) 2020 Rob Clucas
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
@@ -13,7 +13,7 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <snowflake/backend/vk/vulkan_surface_context.hpp>
+#include <snowflake/rendering/backend/vk/vulkan_surface_context.hpp>
 #include <wrench/log/logger.hpp>
 
 namespace snowflake::backend {

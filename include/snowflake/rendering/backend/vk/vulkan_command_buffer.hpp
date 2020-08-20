@@ -1,4 +1,4 @@
-//==--- snowflake/backend/vulkan_command_buffer.hpp -------- -*- C++ -*- ---==//
+//==--- ../rendering/backend/vulkan_command_buffer.hpp ----- -*- C++ -*- ---==//
 //
 //                              Snowflake
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_BACKEND_VK_VULKAN_COMMAND_BUFFER_HPP
-#define SNOWFLAKE_BACKEND_VK_VULKAN_COMMAND_BUFFER_HPP
+#ifndef SNOWFLAKE_RENDERING_BACKEND_VK_VULKAN_COMMAND_BUFFER_HPP
+#define SNOWFLAKE_RENDERING_BACKEND_VK_VULKAN_COMMAND_BUFFER_HPP
 
 #include "vulkan_context.hpp"
 #include <snowflake/util/portability.hpp>
@@ -101,4 +101,4 @@ class VulkanCommandBuffer
 } // namespace backend
 } // namespace snowflake
 
-#endif // SNOWFLAKE_BACKEND_VK_VULKAN_COMMAND_BUFFER_HPP
+#endif // SNOWFLAKE_RENDERING_BACKEND_VK_VULKAN_COMMAND_BUFFER_HPP

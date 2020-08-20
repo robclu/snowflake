@@ -1,4 +1,4 @@
-//==--- snowflake /backend/platform/sdl_platform.hpp ------- -*- C++ -*- ---==//
+//==--- .../rendering/backend/platform/sdl_platform.hpp ---- -*- C++ -*- ---==//
 //
 //                              Snowflake
 //
@@ -14,8 +14,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_BACKEND_PLATFORM_SDL_PLATFORM_HPP
-#define SNOWFLAKE_BACKEND_PLATFORM_SDL_PLATFORM_HPP
+#ifndef SNOWFLAKE_RENDERING_BACKEND_PLATFORM_SDL_PLATFORM_HPP
+#define SNOWFLAKE_RENDERING_BACKEND_PLATFORM_SDL_PLATFORM_HPP
 
 #include "platform_base.hpp"
 #include <snowflake/util/portability.hpp>
@@ -98,4 +98,4 @@ class SdlPlatform : public Platform<SdlPlatform> {
 
 } // namespace snowflake::backend
 
-#endif // SNOWFLAKE_BACKEND_PLATFORM_SDL_PLATFORM_HPP
+#endif // SNOWFLAKE_RENDERING_BACKEND_PLATFORM_SDL_PLATFORM_HPP

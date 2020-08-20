@@ -13,7 +13,7 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <snowflake/window/window.hpp>
+#include <snowflake/window.hpp>
 
 auto run_application() noexcept -> void {
   const char*       name   = "snowflake";

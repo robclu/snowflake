@@ -1,8 +1,8 @@
-//==--- glow/backend/vk/vulkan_context.hpp ----------------- -*- C++ -*- ---==//
+//==--- snowflake/rendering/backend/vk/vulkan_context.hpp -- -*- C++ -*- ---==//
 //
-//                              Ripple - Glow
+//                              Snowflake
 //
-//                      Copyright (c) 2020 Ripple
+//                      Copyright (c) 2020 Rob Clucas
 //
 //  This file is distributed under the MIT License. See LICENSE for details.
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_BACKEND_VULKAN_CONTEXT_HPP
-#define SNOWFLAKE_BACKEND_VULKAN_CONTEXT_HPP
+#ifndef SNOWFLAKE_RENDERING_BACKEND_VK_VULKAN_CONTEXT_HPP
+#define SNOWFLAKE_RENDERING_BACKEND_VK_VULKAN_CONTEXT_HPP
 
 #include "vulkan_headers.hpp"
 #include <tuple>
@@ -311,4 +311,4 @@ class VulkanContext {
 
 } // namespace snowflake::backend
 
-#endif // SNOWFLAKE_VK_CONTEXT_HPP
+#endif // SNOWFLAKE_RENDERING_BACKEND_VK_VULKAN_CONTEXT_HPP

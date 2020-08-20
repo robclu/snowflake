@@ -1,4 +1,4 @@
-//==--- snowflake/backend/platform/platform.hpp ------------ -*- C++ -*- ---==//
+//==--- snowflake/rendering/backend/platform/platform.hpp -- -*- C++ -*- ---==//
 //
 //                                Snowflake
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_BACKEND_PLATFORM_PLATFORM_HPP
-#define SNOWFLAKE_BACKEND_PLATFORM_PLATFORM_HPP
+#ifndef SNOWFLAKE_RENDERING_BACKEND_PLATFORM_PLATFORM_HPP
+#define SNOWFLAKE_RENDERING_BACKEND_PLATFORM_PLATFORM_HPP
 
 #if defined(SNOWFLAKE_HEADLESS_PLATFORM)
 #else
@@ -36,4 +36,4 @@ using PlatformType =
 
 } // namespace snowflake::backend
 
-#endif // SNOWFLAKE_BACKEND_PLATFORM_PLATFORM_HPP
+#endif // SNOWFLAKE_RENDERING_BACKEND_PLATFORM_PLATFORM_HPP

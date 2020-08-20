@@ -1,4 +1,4 @@
-//==--- snowflake/src/backend/vk/frame_data.cpp ------------ -*- C++ -*- ---==//
+//==--- src/rendering/backend/vk/frame_data.cpp ------------ -*- C++ -*- ---==//
 //
 //                              Snowflake
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <snowflake/backend/vk/frame_data.hpp>
-#include <snowflake/backend/vk/vulkan_driver.hpp>
+#include <snowflake/rendering/backend/vk/frame_data.hpp>
+#include <snowflake/rendering/backend/vk/vulkan_driver.hpp>
 #include <array>
 
 namespace snowflake::backend {

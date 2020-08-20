@@ -1,4 +1,4 @@
-//==--- snwoflake/src/vk/platform/sdl_platform.cpp --------- -*- C++ -*- ---==//
+//==--- src/rendering/backend/vk/platform/sdl_platform.cpp - -*- C++ -*- ---==//
 //
 //                            Snowflake
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <snowflake/backend/platform/sdl_platform.hpp>
-#include <snowflake/backend/vk/vulkan_context.hpp>
+#include <snowflake/rendering/backend/platform/sdl_platform.hpp>
+#include <snowflake/rendering/backend/vk/vulkan_context.hpp>
 #include <wrench/log/logger.hpp>
 #include <SDL_syswm.h>
 #include <SDL_vulkan.h>

@@ -16,8 +16,8 @@
 #ifndef SNOWFLAKE_ENGINE_HPP
 #define SNOWFLAKE_ENGINE_HPP
 
-#include <snowflake/backend/platform/platform.hpp>
-#include <snowflake/backend/vk/vulkan_driver.hpp>
+#include "rendering/backend/platform/platform.hpp"
+#include "rendering/backend/vk/vulkan_driver.hpp"
 
 namespace snowflake {
 

@@ -1,4 +1,4 @@
-//==--- snowflake/backend/platform/platform_fwd.hpp -------- -*- C++ -*- ---==//
+//==--- ../rendering/backend/platform/platform_fwd.hpp ----- -*- C++ -*- ---==//
 //
 //                              Snowflake
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_BACKEND_PLATFORM_FWD_HPP
-#define SNOWFLAKE_BACKEND_PLATFORM_FWD_HPP
+#ifndef SNOWFLAKE_RENDERING_BACKEND_PLATFORM_FWD_HPP
+#define SNOWFLAKE_RENDERING_BACKEND_PLATFORM_FWD_HPP
 
 namespace snowflake::backend {
 
@@ -41,4 +41,4 @@ class HeadlessPlatform;
 
 } // namespace snowflake::backend
 
-#endif // SNOWFLAKE_BACKEND_PLATFORM_FWD_HPP
+#endif // SNOWFLAKE_RENDERING_BACKEND_PLATFORM_FWD_HPP

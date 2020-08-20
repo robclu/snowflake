@@ -46,19 +46,19 @@ if (SNOWFLAKE_HEADLESS_PLATFORM)
 else()
   list(
     APPEND SOURCES 
-    ${SNOWFLAKE_SOURCE_DIR}/backend/platform/sdl_platform.cpp
+    ${SNOWFLAKE_SOURCE_DIR}/rendering/backend/platform/sdl_platform.cpp
   )
 endif(SNOWFLAKE_HEADLESS_PLATFORM)
 
 list(
   APPEND SOURCES
-  ${SNOWFLAKE_SOURCE_DIR}/backend/vk/frame_data.cpp
-  ${SNOWFLAKE_SOURCE_DIR}/backend/vk/vulkan_command_buffer.cpp
-  ${SNOWFLAKE_SOURCE_DIR}/backend/vk/vulkan_command_pool.cpp
-  ${SNOWFLAKE_SOURCE_DIR}/backend/vk/vulkan_context.cpp
-  ${SNOWFLAKE_SOURCE_DIR}/backend/vk/vulkan_driver.cpp
-  ${SNOWFLAKE_SOURCE_DIR}/backend/vk/vulkan_surface_context.cpp
-  ${SNOWFLAKE_SOURCE_DIR}/window/window.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/rendering/backend/vk/frame_data.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/rendering/backend/vk/vulkan_command_buffer.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/rendering/backend/vk/vulkan_command_pool.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/rendering/backend/vk/vulkan_context.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/rendering/backend/vk/vulkan_driver.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/rendering/backend/vk/vulkan_surface_context.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/window.cpp
   ${SNOWFLAKE_SOURCE_DIR}/engine.cpp
 )
 

@@ -1,4 +1,4 @@
-//==--- snowflake/src/backend/vk/vulkan_driver.cpp --------- -*- C++ -*- ---==//
+//==--- src/rendering/backend/vk/vulkan_driver.cpp --------- -*- C++ -*- ---==//
 //
 //                              Snowflake
 //
@@ -13,7 +13,7 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <snowflake/backend/vk/vulkan_driver.hpp>
+#include <snowflake/rendering/backend/vk/vulkan_driver.hpp>
 #include <wrench/log/logger.hpp>
 
 #ifndef _WIN32

@@ -1,4 +1,4 @@
-//==--- snowflake/src/window/window.cpp -------------------- -*- C++ -*- ---==//
+//==--- src/window.cpp ------------------------------------- -*- C++ -*- ---==//
 //
 //                              Snowflake
 //
@@ -13,7 +13,7 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <snowflake/window/window.hpp>
+#include <snowflake/window.hpp>
 #include <wrench/log/logger.hpp>
 
 namespace snowflake {

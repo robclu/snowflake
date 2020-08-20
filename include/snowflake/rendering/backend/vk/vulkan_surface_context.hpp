@@ -1,6 +1,6 @@
-//==--- snowflake/backend/vk/vulkan_surface_context.hpp ---- -*- C++ -*- ---==//
+//==--- ../rendering/backend/vk/vulkan_surface_context.hpp - -*- C++ -*- ---==//
 //
-//                              Snowflake
+//                                Snowflake
 //
 //                      Copyright (c) 2020 Rob Clucas
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_BACKEND_VULKAN_SURFACE_CONTEXT_HPP
-#define SNOWFLAKE_BACKEND_VULKAN_SURFACE_CONTEXT_HPP
+#ifndef SNOWFLAKE_RENDERING_BACKEND_VULKAN_SURFACE_CONTEXT_HPP
+#define SNOWFLAKE_RENDERING_BACKEND_VULKAN_SURFACE_CONTEXT_HPP
 
 #include "vulkan_context.hpp"
 #include <atomic>
@@ -260,4 +260,4 @@ class VulkanSurfaceContext {
 
 } // namespace snowflake::backend
 
-#endif // SNOWFLAKE_BACKEND_VULKAN_SURFACE_CONTEXT_HPP
+#endif // SNOWFLAKE_RENDERING_BACKEND_VULKAN_SURFACE_CONTEXT_HPP
