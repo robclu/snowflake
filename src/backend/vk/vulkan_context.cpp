@@ -396,7 +396,7 @@ auto VulkanContext::create_instance(
     debug_info.pUserData = this;
 
     vkCreateDebugUtilsMessengerEXT(
-      instance_, &debug_info, nullptr, &_debug_messenger);
+      instance_, &debug_info, nullptr, &debug_messenger_);
   } else if (has_extension(VK_EXT_DEBUG_REPORT_EXTENSION_NAME)) {
     VkDebugReportCallbackCreateInfoEXT debug_info = {
       VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT};

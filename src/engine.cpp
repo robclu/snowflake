@@ -13,7 +13,7 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <snowflake/engine/engine.hpp>
+#include <snowflake/engine.hpp>
 #include <wrench/log/logger.hpp>
 
 namespace snowflake {

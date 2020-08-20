@@ -16,7 +16,7 @@
 #ifndef SNOWFLAKE_WINDOW_WINDOW_HPP
 #define SNOWFLAKE_WINDOW_WINDOW_HPP
 
-#include <snowflake/engine/engine.hpp>
+#include <snowflake/engine.hpp>
 #include <snowflake/backend/platform/platform.hpp>
 #include <snowflake/util/portability.hpp>
 

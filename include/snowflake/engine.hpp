@@ -1,4 +1,4 @@
-//==--- snowflake/engine/engine.hpp ------------------------ -*- C++ -*- ---==//
+//==--- snowflake/engine.hpp ------------------------------- -*- C++ -*- ---==//
 //
 //                              Snowflake
 //
@@ -13,8 +13,8 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_ENGINE_ENGINE_HPP
-#define SNOWFLAKE_ENGINE_ENGINE_HPP
+#ifndef SNOWFLAKE_ENGINE_HPP
+#define SNOWFLAKE_ENGINE_HPP
 
 #include <snowflake/backend/platform/platform.hpp>
 #include <snowflake/backend/vk/vulkan_driver.hpp>
@@ -86,4 +86,4 @@ class Engine {
 
 } // namespace snowflake
 
-#endif // SNOWFLAKE_ENGINE_ENGINE_HPP
+#endif // SNOWFLAKE_ENGINE_HPP
