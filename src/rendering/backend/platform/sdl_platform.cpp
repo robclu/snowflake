@@ -108,7 +108,8 @@ static bool loader_initialized = false;
 
 auto SdlPlatform::initialize() noexcept -> void {
   if (!loader_initialized && !SdlPlatform::initialize_vulkan_loader()) {
-    assert(false && "Failed to load the vulkan loader!");
+    wrench::log_error("Failed to load the vulkan loader!");
+    assert(false);
   }
 
   if (window_) {

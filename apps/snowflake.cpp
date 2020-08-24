@@ -13,30 +13,35 @@
 //
 //==------------------------------------------------------------------------==//
 
-#include <snowflake/window.hpp>
+#include <snowflake/engine/engine.hpp>
+#include <snowflake/engine/window.hpp>
+#include <snowflake/rendering/renderer.hpp>
+#include <snowflake/rendering/scene_view.hpp>
 
 auto run_application() noexcept -> void {
-  const char*       name   = "snowflake";
-  auto*             engine = snowflake::Engine::create();
-  snowflake::Window window(engine, name, 512, 512);
+  using namespace snowflake;
+  const char* name   = "snowflake";
+  Engine&     engine = snowflake::Engine::create();
+  Window      window(&engine, name, 512, 512);
 
-  // auto* renderer = window.renderer();
-  // auto* renderer = engine.renderer();
+  // Empty for now ...
+  SceneView view;
+
+  // Create the scene ...
+
+  Renderer* renderer = engine.create_renderer();
   while (window.is_alive()) {
     window.poll_input();
 
     // Do some event handling
 
-    auto* driver = engine->driver();
-    driver->begin_frame(*(engine->platform()));
-
-    auto cmd =
-      driver->request_command_buffer<snowflake::CommandBufferKind::graphics>();
-
-    driver->submit(cmd);
-
-    driver->end_frame(*(engine->platform()));
+    if (renderer->begin_frame()) {
+      renderer->render(&view);
+      renderer->end_frame();
+    }
   }
+
+  engine.destroy(renderer);
 }
 
 auto main(int argc, const char* argv[]) -> int {

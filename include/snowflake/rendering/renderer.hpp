@@ -1,4 +1,4 @@
-//==--- snwoflake/renderer/renderer.hpp -------------------- -*- C++ -*- ---==//
+//==--- snwoflake/rendering/renderer.hpp ------------------- -*- C++ -*- ---==//
 //
 //                              Snowflake
 //
@@ -13,17 +13,17 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_RENDERER_RENDERER_HPP
-#define SNOWFLAKE_RENDERER_RENDERER_HPP
+#ifndef SNOWFLAKE_RENDERING_RENDERER_HPP
+#define SNOWFLAKE_RENDERING_RENDERER_HPP
 
 namespace snowflake {
 
 class Engine;
-class View;
+class SceneView;
 
 /**
  * The Renderer is an object which is used to generate drawing commands for
- * a given View which is a representation of a Scene thtough a specific
+ * a given SceneView which is a representation of a Scene thtough a specific
  * viewport (i.e a Camera). A renderer is created from an Engine.
  *
  * The typical usage of the renderer is:
@@ -43,21 +43,26 @@ class Renderer {
   /**
    * Constructor to intialize the renderer with the \p engine.
    */
-  explicit Renderer(Engine* engine) noexcept : engine_(engine) {}
+  explicit Renderer(Engine& engine) noexcept : engine_(engine) {}
 
   /**
    * Returns a reference to the engine.
    */
   auto engine() noexcept -> Engine& {
-    return *engine_;
+    return engine_;
   }
 
   /*
    * Returns a const pointer to the engine
    */
   auto engine() const noexcept -> const Engine& {
-    return *engine_;
+    return engine_;
   }
+
+  /**
+   * Initializes the renderer.
+   */
+  auto init() noexcept -> void;
 
   /**
    * Render a View into this renderer's window.
@@ -81,7 +86,7 @@ class Renderer {
    *  - Motion blur
    *  - Bloom
    *
-   * \param view A pointer to the view to render.
+   * \param view A pointer to the view of the scene to render.
    *
    * \note If multiple Renderer instances exist, then calls to this method must
    *       be externally synchronized by the caller.
@@ -89,12 +94,45 @@ class Renderer {
    * \note This method is does heavy processing, but is threaded internally
    *       to reduce the latency.
    */
-  auto render(const View* view) noexcept -> void;
+  auto render(const SceneView* view) noexcept -> void;
+
+  /**
+   * Sets up the frame for rendering.
+   *
+   * This manages the fram rate, and returns whether or not a frame should be
+   * drawn. The purpose of this method is to keep the frame latency low by
+   * returning false when the GPU is overloaded and falling behind.
+   *
+   * When the GPU becomes overload, a stutter occur, this method tries to remove
+   * such a case by returning false that the render() method __should not__ be
+   * called.
+   *
+   * \return
+   *  __false__ when the current frame should be skipped,
+   *  __true__ when the current frame must be drawn.
+   *
+   * \note If the frame is skipped, then end_frame() must not be called.
+   */
+  auto begin_frame() noexcept -> bool;
+
+  /**
+   * Finishes the current frame, scheduling it for display to whatever platform
+   * is being used.
+   *
+   * \note This method must be called __after__ render(), and must only be
+   *       called when begin_frame() returns true.
+   */
+  auto end_frame() noexcept -> void;
+
+  /**
+   * Destroys the renderer, cleaning up any resource that the renderer used.
+   */
+  auto destroy() noexcept -> void;
 
  private:
-  Engine* engine_ = nullptr; //!< Pointer to the engine.
+  Engine& engine_; //!< Pointer to the engine.
 };
 
 } // namespace snowflake
 
-#endif // SNOWFLAKE_RENDERER_RENDERER_HPP
+#endif // SNOWFLAKE_RENDERING_RENDERER_HPP

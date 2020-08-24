@@ -1,4 +1,4 @@
-//==--- snowflake/window.hpp ------------------------------- -*- C++ -*- ---==//
+//==--- snowflake/engine/window.hpp ------------------------ -*- C++ -*- ---==//
 //
 //                                Snowflake
 //
@@ -13,12 +13,12 @@
 //
 //==------------------------------------------------------------------------==//
 
-#ifndef SNOWFLAKE_WINDOW_HPP
-#define SNOWFLAKE_WINDOW_HPP
+#ifndef SNOWFLAKE_ENGINE_WINDOW_HPP
+#define SNOWFLAKE_ENGINE_WINDOW_HPP
 
 #include "engine.hpp"
-#include "rendering/backend/platform/platform.hpp"
-#include "util/portability.hpp"
+#include <snowflake/rendering/backend/platform/platform.hpp>
+#include <snowflake/util/portability.hpp>
 
 namespace snowflake {
 
@@ -29,7 +29,7 @@ namespace snowflake {
 /// mode.
 class Window {
  public:
-  /// Defines the type of the driver pointer.
+  /** Defines the type of the engine pointer. */
   using EnginePtr = Engine*;
 
   //==--- [construction] ---------------------------------------------------==//
@@ -74,7 +74,7 @@ class Window {
   auto poll_input() noexcept -> void;
 
  private:
-  EnginePtr engine_; //!< Pointer to the engine.
+  EnginePtr engine_ = nullptr; //!< Reference to the engine.
 
   /// Initializes the window by creating the engine and the initializing the
   /// engine platform.  Returns true if everything was created successfully.
@@ -87,4 +87,4 @@ class Window {
 
 } // namespace snowflake
 
-#endif // SNOWFLAKE_WINDOW_HPP
+#endif // SNOWFLAKE_ENGINE_WINDOW_HPP

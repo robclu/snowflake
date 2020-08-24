@@ -29,9 +29,9 @@ namespace snowflake ::backend {
 
 auto VulkanDriver::create(
   const VulkanDriver::Platform& platform, uint16_t threads) noexcept
-  -> VulkanDriver* {
+  -> VulkanDriver& {
   static VulkanDriver driver(platform, threads);
-  return &driver;
+  return driver;
 }
 
 auto VulkanDriver::destroy() noexcept -> void {

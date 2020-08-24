@@ -58,8 +58,9 @@ list(
   ${SNOWFLAKE_SOURCE_DIR}/rendering/backend/vk/vulkan_context.cpp
   ${SNOWFLAKE_SOURCE_DIR}/rendering/backend/vk/vulkan_driver.cpp
   ${SNOWFLAKE_SOURCE_DIR}/rendering/backend/vk/vulkan_surface_context.cpp
-  ${SNOWFLAKE_SOURCE_DIR}/window.cpp
-  ${SNOWFLAKE_SOURCE_DIR}/engine.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/rendering/renderer.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/engine/window.cpp
+  ${SNOWFLAKE_SOURCE_DIR}/engine/engine.cpp
 )
 
 #===== [applications] =========================================================#

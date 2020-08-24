@@ -60,11 +60,15 @@ class VulkanDriver {
 
   //==--- [construction] ---------------------------------------------------==//
 
-  /// Creates the vulkan driver from the platform.
-  /// \param platform The platform to create the driver with.
-  /// \param threads  The number of threads to use for the driver.
+  /**
+   * Creates the vulkan driver from the platform. This either fails and
+   * terminates, or returns a valid driver. Since the application can't proceed
+   * with an invalid driver, these are the only options.
+   * \param platform The platform to create the driver with.
+   * \param threads  The number of threads to use for the driver.
+   */
   static auto create(const Platform& platform, uint16_t threads = 1) noexcept
-    -> VulkanDriver*;
+    -> VulkanDriver&;
 
   /// Destroys the driver.
   auto destroy() noexcept -> void;
