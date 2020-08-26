@@ -17,7 +17,7 @@
 #define SNOWFLAKE_UTIL_PORTABILITY_HPP
 
 #if __cplusplus == 201703L
-  #define snowflake_nodiscard [[nodiscard]]
+  #define snowflake_nodiscard [[nodiscard]] // NOLINT
 #else
   #define snowflake_nodiscard
 #endif
