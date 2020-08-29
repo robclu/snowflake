@@ -49,6 +49,8 @@ class SparseSet {
 
   /** Defines the type of a page. */
   using Page = Entity*;
+  /** Defines a nullpage. */
+  static constexpr Page nullpage = nullptr;
 
  public:
   /**
@@ -94,13 +96,14 @@ class SparseSet {
   /**
    * Returns the capacity of the sparse set.
    *
-   * The capacity is the number of pages which have been allocated in the
-   * internal sparse array.
+   * The capacity is the number of entities which can be stored in the sparse
+   * set, whithout additional allocation, and is the capacity of the internal
+   * dense array.
    *
-   * \return The number of allocated pages in the internal sparse array.
+   * \return The capcacity of the internal dense array.
    */
   snowflake_nodiscard auto capacity() const noexcept -> SizeType {
-    return sparse_.size();
+    return dense_.capacity();
   }
 
   /**
@@ -111,6 +114,22 @@ class SparseSet {
    */
   snowflake_nodiscard auto extent() const noexcept -> SizeType {
     return sparse_.size() * page_size;
+  }
+
+  /**
+   * Reserves enough space to emplace \p size entities in the dense array
+   * without allocation.
+   */
+  auto reserve(SizeType size) noexcept -> void {
+    dense_.reserve(size);
+  }
+
+  /**
+   * Determines if the sparse set is empty.
+   * \return __true__ if the sparse set is empty.
+   */
+  snowflake_nodiscard auto empty() const noexcept -> bool {
+    return _dense.empty();
   }
 
   /**
@@ -133,13 +152,71 @@ class SparseSet {
    */
   snowflake_nodiscard auto exists(const Entity& entity) const noexcept -> bool {
     const auto page = page_index(entity);
-    return page < sparse_.size() && sparse[page] &&
-           sparse[page][entity_index() entity] != Entity::invalid;
+    return page < sparse_.size() && sparse_[page] &&
+           !sparse_entity(entity).invalid();
+  }
+
+  /**
+   * Emplaces an entity into the sparse set.
+   *
+   * \note If the internal sparse vector is not preallocated, then this will
+   *       allocate a page of entities if the required page for the entity is
+   *       not already allocated.
+   *
+   * \note This will assert in debug builds if the \p entity is already in the
+   *       set.
+   *
+   * \param entity The entity to emplace into the set.
+   */
+  auto emplace(const Entity& entity) noexcept -> void {
+    assert(!exists(entity) && "Entity already in sparse set!");
+    sparse_entity(entity) = Entity{dense_.size()};
+    dense_.emplace_back(entity);
+  }
+
+  /**
+   * Removes the \p entity from the sparse set.
+   *
+   * \note If the entity does not exist then this will assert in debug builds,
+   *       while in release builds it will cause undefined behaviour.
+   *
+   * \param entity The entity to remove.
+   */
+  auto erase(const Entity& entity) noexcept -> void {
+    assert(exists(entity) && "Erasing an entity not in the sparse set!");
+    const auto& curr_sparse = sparse_entity(entity);
+
+    // Swap the one to remove with the back one in dense:
+    dense_[curr_sparse]          = dense_.back();
+    sparse_entity(dense_.back()) = curr_sparse;
+    curr_sparse.reset();
+    dense_.pop_back();
+  }
+
+  /**
+   * Swaps two entities in the sparse set.
+   *
+   * \note This touches both the internal sparse and dense arrays.
+   *
+   * \note If either of the entities are not in the sparse set, then this will
+   *       assert in debug, or be undefined in release.
+   *
+   * \param a An entity to swap with.
+   * \param b An entity to swap with.
+   */
+  auto swap(const Entity& a, const Entity& b) noexcept -> void {
+    assert(exists(a) && "Can't swap entity which doesn't exist!");
+    assert(exists(b) && "Can't swap entity which doesn't exist!");
+
+    auto& sparse_a = sparse_entity(a);
+    auto& sparse_b = sparse_entity(b);
+    std::swap(dense_[sparse_a], dense_[sparse_b]);
+    std::swap(sparse_a, sparse_b);
   }
 
  private:
-  std::vector<Page>   sparse_;              //!< Sparse array.
-  std::vector<Entity> dense_;               //!< Dense array,
+  std::vector<Page>   sparse_    = {};      //!< Sparse array.
+  std::vector<Entity> dense_     = {};      //!< Dense array,
   Allocator*          allocator_ = nullptr; //!< Pointer to allocator.
 
   /**
@@ -153,13 +230,53 @@ class SparseSet {
   }
 
   /**
-   * Gets the index for the entity in the page it's assosciated to.
+   * Gets the offset for the entity in the page it's assosciated to.
    * \param   entity The entity to get the index for.
-   * \return  The index of the entity in its page.
+   * \return  The offset of the entity in its page.
    */
   snowflake_nodiscard auto
-  entity_index(const Entity& entity) const noexcept -> SizeType {
+  offset(const Entity& entity) const noexcept -> SizeType {
     return static_cast<SizeType>(entity) & (page_size - 1);
+  }
+
+  /**
+   * Gets a reference to the page at \p index.
+   *
+   * \note This will call the allocator to allocate the page if the page at the
+   *       given index had not been allocated. If the allocator is null, this
+   *       will call the global allocator.
+   *
+   * \param index The index of the page to get.
+   * \return A pointer to the page at the \p index.
+   */
+  snowflake_nodiscard auto fetch_page(SizeType index) noexcept -> Page& {
+    constexpr size_t page_byte_size = sizeof(Entity) * page_size;
+    while (sparse_.size() < index) {
+      sparse_.emplace_back(nullpage);
+    }
+    if (sparse_[index] == nullpage) {
+      sparse_[index] = static_cast<Page>(
+        allocator_ ? allocator_.alloc(page_byte_size) : malloc(page_byte_size));
+
+      for (auto *e = sparse_[index], *end = e + page_size; e != end; ++e) {
+        e->reset();
+      }
+    }
+    return sparse_[index];
+  }
+
+  /**
+   * Returns a reference to an entity in the sparse vector for the given \p
+   * entity.
+   *
+   * \note This will allocate a page for the entity if a page for the entity
+   *       isn't already allocated.
+   *
+   * \param entity The entity to get from the sparse vector.
+   */
+  snowflake_nodiscard auto
+  sparse_entity(const Entity& entity) noexcept -> Entity& {
+    return fetch_page(entity)[offset(entity)];
   }
 };
 

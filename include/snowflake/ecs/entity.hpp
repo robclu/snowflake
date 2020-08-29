@@ -40,10 +40,18 @@ class Entity {
   /*==--- [construction] ---------------------------------------------------==*/
 
   // clang-format off
+  
+  /**
+   * Constructor to initialize the entity with a valid id.
+   * \param id The id for the entity.
+   */
+  explicit Entity(IdType id) noexcept : id_(id) {}
+
   /**
    * Default constructor which initializes an invalid entity.
    */
   constexpr Entity() noexcept              = default;
+
   /** Copy constrctor -- defaulted. */
   constexpr Entity(const Entity&) noexcept = default;
   /** Move constrctor -- defaulted. */
