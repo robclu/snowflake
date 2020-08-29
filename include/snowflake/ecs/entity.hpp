@@ -26,6 +26,17 @@ namespace snowflake {
  * a given entity.
  */
 class Entity {
+ public:
+  /**
+   * Defines the type used for the entity id.
+   */
+  using IdType = uint32_t;
+
+  /**
+   * Defines the value of a null id for the entity.
+   */
+  static constexpr IdType null_id = std::numeric_limits<IdType>::max();
+
   /*==--- [construction] ---------------------------------------------------==*/
 
   // clang-format off
@@ -107,16 +118,6 @@ class Entity {
   }
 
  private:
-  /**
-   * Defines the type used for the entity id.
-   */
-  using IdType = uint32_t;
-
-  /**
-   * Defines the value of a null id for the entity.
-   */
-  static constexpr IdType null_id = 0;
-
   IdType id_ = null_id; //!< Id for the entity.
 
   /**
