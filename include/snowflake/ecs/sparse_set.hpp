@@ -17,6 +17,7 @@
 #define SNOWFLAKE_ECS_SPARSE_SET_HPP
 
 #include "entity.hpp"
+#include <wrench/memory/allocator.hpp>
 #include <vector>
 
 namespace snowflake {
@@ -42,10 +43,13 @@ static constexpr size_t sparse_page_size =
  * through the sparse array is only required when inserting and deleting from
  * the set, which should not be on the hot path when this type is used.
  */
-template <typename Entity, typename Allocator>
+template <
+  typename Entity,
+  typename Allocator = wrench::ObjectPoolAllocator<Entity>>
 class SparseSet {
-  /** Defines the size of the pages in the sparse array. */
-  static constexpr size_t page_size = sparse_page_size;
+  static_assert(
+    std::is_convertible_v<Entity, size_t>,
+    "Entity must be convertible to size type for use in sparse set!");
 
   /** Defines the type of a page. */
   using Page = Entity*;
@@ -57,6 +61,11 @@ class SparseSet {
    * Defines the size type used for the sparse set.
    */
   using SizeType = size_t;
+
+  /** Defines the size of the pages in the sparse array. */
+  static constexpr size_t page_size = sparse_page_size;
+
+  /*==--- [construction] ---------------------------------------------------==*/
 
   /**
    * Default constructor.
@@ -83,7 +92,7 @@ class SparseSet {
   /** Move assignment operator -- defaulted. */
   auto operator=(SparseSet&&) noexcept -> SparseSet& = default;
 
-  /*==--- [deletet] --------------------------------------------------------==*/
+  /*==--- [deleted] --------------------------------------------------------==*/
 
   /** Copy constructor -- deleted. */
   SparseSet(const SparseSet&) = delete;
@@ -140,8 +149,23 @@ class SparseSet {
    *
    * \return The number of elements in the sparse set.
    */
-  snowflake_nodiscard auto size() const noexcept -> Size {
+  snowflake_nodiscard auto size() const noexcept -> SizeType {
     return dense_.size();
+  }
+
+  /**
+   * Gets the index of the \p entity.
+   *
+   * \note This will assert in debug builds if the entity does not exist, and in
+   *       release builds it will cause undefined behaviour.
+   *
+   * \param entity The entity to get the index of.
+   * \return The index of the \p entity.
+   */
+  snowflake_nodicard auto
+  index(const Entity& entity) const noexcept -> SizeType {
+    assert(exists(entity) && "Can't get the index of an invalid entity!");
+    return static_cast<SizeType>(sparse_entity(entity));
   }
 
   /**
