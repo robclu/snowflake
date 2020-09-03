@@ -13,6 +13,7 @@
 //
 //==------------------------------------------------------------------------==//
 
+#include "ecs/entity.hpp"
 #include "ecs/sparse_set.hpp"
 
 int main(int argc, char** argv) {
