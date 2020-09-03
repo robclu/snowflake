@@ -1,5 +1,6 @@
 compile_commands.json
 .vscode/
+.vscode/settings.json
 build/
 external/volk
 external/wrench

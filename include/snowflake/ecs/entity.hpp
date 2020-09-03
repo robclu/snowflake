@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <snowflake/util/portability.hpp>
+#include <limits>
 
 namespace snowflake {
 
@@ -40,12 +41,12 @@ class Entity {
   /*==--- [construction] ---------------------------------------------------==*/
 
   // clang-format off
-  
+
   /**
    * Constructor to initialize the entity with a valid id.
    * \param id The id for the entity.
    */
-  explicit Entity(IdType id) noexcept : id_(id) {}
+  constexpr explicit Entity(IdType id) noexcept : id_(id) {}
 
   /**
    * Default constructor which initializes an invalid entity.
@@ -62,6 +63,13 @@ class Entity {
   /** Move addignment -- defaulted. */
   constexpr auto operator=(Entity&&) noexcept      -> Entity& = default;
   // clang-format on
+
+  /**
+   * Creates a null entity.
+   */
+  static constexpr auto null_entity() noexcept {
+    return Entity{null_id};
+  }
 
   /*==--- [operator overloads] ---------------------------------------------==*/
 
@@ -125,14 +133,22 @@ class Entity {
     return !invalid();
   }
 
- private:
-  IdType id_ = null_id; //!< Id for the entity.
+  /**
+   * Overload of operator to convert to the underlying type.
+   */
+  constexpr operator IdType() const noexcept {
+    return id_;
+  }
 
   /**
-   * Constructor to initialize the entity with a valid id.
-   * \param id The id for the entity.
+   * Overload of operator to convert to the underlying reference type.
    */
-  explicit Entity(IdType id) noexcept : id_(id) {}
+  constexpr operator IdType&() noexcept {
+    return id_;
+  }
+
+ private:
+  IdType id_ = null_id; //!< Id for the entity.
 };
 
 } // namespace snowflake

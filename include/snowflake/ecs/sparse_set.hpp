@@ -17,13 +17,15 @@
 #define SNOWFLAKE_ECS_SPARSE_SET_HPP
 
 #include "entity.hpp"
+#include <snowflake/util/portability.hpp>
 #include <wrench/memory/allocator.hpp>
 #include <vector>
 
 namespace snowflake {
 
 /**
- * Defines the size of the sparse pages.
+ * Defines the size of the sparse pages, which is the number of entities which
+ * can be stored in a page, *not* the byte size of the page.
  */
 static constexpr size_t sparse_page_size =
 #if defined(SNOWFLAKE_SPARSE_PAGE_SIZE)
@@ -82,7 +84,7 @@ class SparseSet {
    */
   ~SparseSet() noexcept {
     for (auto& page : sparse_) {
-      allocator_ != nullptr ? allocator_.recycle(page) : std::free(page);
+      allocator_ != nullptr ? allocator_->recycle(page) : std::free(page);
     }
   }
 
@@ -138,7 +140,7 @@ class SparseSet {
    * \return __true__ if the sparse set is empty.
    */
   snowflake_nodiscard auto empty() const noexcept -> bool {
-    return _dense.empty();
+    return dense_.empty();
   }
 
   /**
@@ -162,10 +164,10 @@ class SparseSet {
    * \param entity The entity to get the index of.
    * \return The index of the \p entity.
    */
-  snowflake_nodicard auto
+  snowflake_nodiscard auto
   index(const Entity& entity) const noexcept -> SizeType {
     assert(exists(entity) && "Can't get the index of an invalid entity!");
-    return static_cast<SizeType>(sparse_entity(entity));
+    return static_cast<SizeType>(page(entity)[offset(entity)]);
   }
 
   /**
@@ -175,9 +177,9 @@ class SparseSet {
    * \return __true__ if the entity exists, false otherwise.
    */
   snowflake_nodiscard auto exists(const Entity& entity) const noexcept -> bool {
-    const auto page = page_index(entity);
-    return page < sparse_.size() && sparse_[page] &&
-           !sparse_entity(entity).invalid();
+    const auto page_id = page_index(entity);
+    return page_id < sparse_.size() && sparse_[page_id] &&
+           !sparse_[page_id][offset(entity)].invalid();
   }
 
   /**
@@ -194,7 +196,8 @@ class SparseSet {
    */
   auto emplace(const Entity& entity) noexcept -> void {
     assert(!exists(entity) && "Entity already in sparse set!");
-    sparse_entity(entity) = Entity{dense_.size()};
+    using IdType          = typename Entity::IdType;
+    sparse_entity(entity) = Entity{static_cast<IdType>(dense_.size())};
     dense_.emplace_back(entity);
   }
 
@@ -208,7 +211,7 @@ class SparseSet {
    */
   auto erase(const Entity& entity) noexcept -> void {
     assert(exists(entity) && "Erasing an entity not in the sparse set!");
-    const auto& curr_sparse = sparse_entity(entity);
+    auto& curr_sparse = sparse_entity(entity);
 
     // Swap the one to remove with the back one in dense:
     dense_[curr_sparse]          = dense_.back();
@@ -264,6 +267,20 @@ class SparseSet {
   }
 
   /**
+   * Gets the page for a given entity.
+   *
+   * \note This doesn't check validity of the page, so should only be called
+   *       when it's known that the page exists, otherwise use fetch_page.
+   *
+   * \param  entity The entity to get the page for.
+   * \return A reference to the page for the entity.
+   */
+  snowflake_nodiscard auto
+  page(const Entity& entity) const noexcept -> const Page& {
+    return sparse_[page_index(entity)];
+  }
+
+  /**
    * Gets a reference to the page at \p index.
    *
    * \note This will call the allocator to allocate the page if the page at the
@@ -275,12 +292,13 @@ class SparseSet {
    */
   snowflake_nodiscard auto fetch_page(SizeType index) noexcept -> Page& {
     constexpr size_t page_byte_size = sizeof(Entity) * page_size;
-    while (sparse_.size() < index) {
+    while (sparse_.size() <= index) {
       sparse_.emplace_back(nullpage);
     }
     if (sparse_[index] == nullpage) {
       sparse_[index] = static_cast<Page>(
-        allocator_ ? allocator_.alloc(page_byte_size) : malloc(page_byte_size));
+        allocator_ ? allocator_->alloc(page_byte_size)
+                   : malloc(page_byte_size));
 
       for (auto *e = sparse_[index], *end = e + page_size; e != end; ++e) {
         e->reset();
@@ -300,7 +318,7 @@ class SparseSet {
    */
   snowflake_nodiscard auto
   sparse_entity(const Entity& entity) noexcept -> Entity& {
-    return fetch_page(entity)[offset(entity)];
+    return fetch_page(page_index(entity))[offset(entity)];
   }
 };
 
