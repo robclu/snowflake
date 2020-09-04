@@ -285,4 +285,25 @@ TEST(sparse_set, reverse_iterator_iteration) {
   EXPECT_EQ(it_sum, sum);
 }
 
+TEST(sparse_set, find) {
+  SparseSet         set;
+  snowflake::Entity ent(entity_id);
+
+  EXPECT_EQ(set.find(ent), set.end());
+
+  set.emplace(ent);
+  EXPECT_EQ(*set.find(ent), ent);
+
+  snowflake::Entity e1{1}, e2{2}, e3{3};
+  set.emplace(e1);
+  set.emplace(e2);
+  set.emplace(e3);
+
+  auto it = set.find(e3);
+  EXPECT_EQ(*it, e3);
+  EXPECT_EQ(*(++it), e2);
+  EXPECT_EQ(*(++it), e1);
+  EXPECT_EQ(*(++it), ent);
+}
+
 #endif // SNOWFLAKE_TESTS_ECS_SPARSE_SET_HPP

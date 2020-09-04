@@ -584,6 +584,23 @@ class SparseSet {
     return rbegin() + dense_.size();
   }
 
+  /*==--- [algorithms] -----------------------------------------------------==*/
+
+  /**
+   * Finds an entity in the sparse set, if it exists.
+   *
+   * If the entity doesn't exist, this returns an iterator to the end of the
+   * set, otherwise it returns an iterator to the found entity.
+   *
+   * \param entity The entity to find.
+   * \return A valid iterator if found, otherwise an iterator to the end of the
+   *         set.
+   */
+  snowflake_nodiscard auto
+  find(const Entity& entity) const noexcept -> Iterator {
+    return exists(entity) ? --Iterator(end() - index(entity)) : end();
+  }
+
  private:
   Sparse     sparse_    = {};      //!< Sparse array.
   Dense      dense_     = {};      //!< Dense array,
