@@ -53,19 +53,294 @@ class SparseSet {
     std::is_convertible_v<Entity, size_t>,
     "Entity must be convertible to size type for use in sparse set!");
 
+  // clang-format off
   /** Defines the type of a page. */
-  using Page = Entity*;
+  using Page   = Entity*;
+  /** Defines the type of the sparse container. */
+  using Sparse = std::vector<Page>;
+  /** Defines the type of the dense container. */
+  using Dense  = std::vector<Entity>;
+  // clang-format on
+
   /** Defines a nullpage. */
   static constexpr Page nullpage = nullptr;
 
- public:
   /**
-   * Defines the size type used for the sparse set.
+   * Iterator class for the sparse set.
    */
+  class SparseIterator {
+    /**
+     * Friend of the set so that its data can be accessed.
+     */
+    friend class SparseSet<Entity, Allocator>;
+
+    /** Defines the position type. */
+    using IndexType = typename Entity::IdType;
+
+    /**
+     * Constructor to iniitalize the iterator from a reference to the dense
+     * array for the sparse set and a \p position into the array.
+     * \param dense    The dense container for the sparse set.
+     * \param position The position in the array.
+     */
+    SparseIterator(const Dense& dense, IndexType position) noexcept
+    : dense_{&dense}, pos_{position} {}
+
+   public:
+    // clang-format off
+    /** Difference type for the iterator. */
+    using difference_type   = IndexType;
+    /** Value type for the iterator. */
+    using value_type        = Entity;
+    /** Pointer type for the iterator. */
+    using pointer           = const value_type*;
+    /** Reference type for the iterator. */
+    using reference         = const value_type&;
+    /** Category for the iterator. */
+    using iterator_category = std::random_access_iterator_tag;
+    // clang-format on
+
+    /**
+     * Default constructor for the iterator.
+     */
+    SparseIterator() noexcept = default;
+
+    /**
+     * Overload of prefix increment operator.
+     *
+     * \note This iterates *backwards* because this allows elements to be
+     *       added to the sparse set without invalidating the iterator.
+     *
+     * \return A reference to the modified iterator.
+     */
+    auto operator++() noexcept -> SparseIterator& {
+      --pos_;
+      return *this;
+    }
+
+    /**
+     * Overload of postfix increment operator.
+     *
+     * \note This iterates *backwards* because this allows elements to be added
+     *       to the sparse set without invalidating the iterator.
+     *
+     * \return The new iterator with the original position.
+     */
+    auto operator++(int) noexcept -> SparseIterator {
+      // clang-format off
+      SparseIterator curr = *this;
+      operator++();
+      return curr;
+      // clang-format on
+    }
+
+    /**
+     * Overload of prefix decrement operator.
+     *
+     * \note This iterates *forwards* because it needs to be the reverse of
+     *       operator++, \sa operator++.
+     *
+     * \return A reference to the modified iterator.
+     */
+    auto operator--() noexcept -> SparseIterator& {
+      ++pos_;
+      return *this;
+    }
+
+    /**
+     * Overload of postfix decrement operator.
+     *
+     * \note This iterates *forwards* because it needs to be the reverse of
+     *       operator++, \sa operator++.
+     *
+     * \return The new iterator with the original position.
+     */
+    auto operator--(int) noexcept -> SparseIterator {
+      // clang-format off
+      SparseIterator curr = *this;
+      operator--();
+      return curr;
+      // clang-format on
+    }
+
+    /**
+     * Overload of operator+= to offset the iterator.
+     *
+     * \note The moves the iterator *backward*, \sa operator++.
+     *
+     * \param amount The amount to offset by.
+     * \return A reference to the offset iterator.
+     */
+    auto operator+=(const difference_type amount) noexcept -> SparseIterator& {
+      pos_ -= amount;
+      return *this;
+    }
+
+    /**
+     * Overload of operator+ to get an iterator at an offset from this one.
+     *
+     * \note This gets an iterator *backwards* from this one, \sa operator++.
+     *
+     * \param amount The amount to offset by.
+     * \return A new iterator offset from this one by \p amount.
+     */
+    auto
+    operator+(const difference_type amount) const noexcept -> SparseIterator {
+      SparseIterator result = *this;
+      return (result += amount);
+    }
+
+    /**
+     * Overload of operator-= to offset the iterator.
+     *
+     * \note The moves the iterator *forwards*, \sa operator--.
+     *
+     * \param amount The amount to offset by.
+     * \return A reference to the offset iterator.
+     */
+    auto operator-=(const difference_type amount) noexcept -> SparseIterator& {
+      pos_ += amount;
+      return *this;
+    }
+
+    /**
+     * Overload of operator- to get an iterator at an offset from this one.
+     *
+     * \note This gets an iterator *forwards* from this one, \sa operator--.
+     *
+     * \param amount The amount to offset by.
+     * \return A new iterator offset from this one by \p amount.
+     */
+    auto
+    operator-(const difference_type amount) const noexcept -> SparseIterator {
+      SparseIterator result = *this;
+      return (result -= amount);
+    }
+
+    /**
+     * Overload of operator- to get the distance between two iterators.
+     * \param other The other iterator to get the distance to.
+     * \return The distance between two iterators.
+     */
+    auto
+    operator-(const SparseIterator& other) const noexcept -> difference_type {
+      return other.pos_ - pos_;
+    }
+
+    /**
+     * Index operator to get the iterated type at an offset from this iterators
+     * element.
+     *
+     * \note This gets the index *backwards* from this one.
+     *
+     * \param index The offset of the element from this one.
+     * \return A reference to the element.
+     */
+    snowflake_nodiscard auto
+    operator[](const difference_type index) const -> reference {
+      assert(dense_ != nullptr && "Invalid iterator access!");
+      const auto pos = SizeType(pos_ - index - SizeType(1));
+      return (*dense_)[pos];
+    }
+
+    /**
+     * Equality comparison operator.
+     * \param other The other iterator to compare to.
+     * \return __true__ if the iterators are equal.
+     */
+    snowflake_nodiscard auto
+    operator==(const SparseIterator& other) const noexcept -> bool {
+      return other.pos_ == pos_;
+    }
+
+    /**
+     * Inequality comparison operator.
+     * \param other The other iterator to compare with.
+     * \return __true__ if the iterators are not equal.
+     */
+    snowflake_nodiscard auto
+    operator!=(const SparseIterator& other) const noexcept -> bool {
+      return other.pos_ != pos_;
+    }
+
+    /**
+     * Less than comparison operator.
+     * \param other The other iterator to compare to.
+     * \return __true__ if this iterator is less than the \p other.
+     */
+    snowflake_nodiscard auto
+    operator<(const SparseIterator& other) const noexcept -> bool {
+      return pos_ > other.pos_;
+    }
+
+    /**
+     * Greather than comparison operator.
+     * \param other The other iterator to compare to.
+     * \return __true__ if this iterator is greater than the \p other.
+     */
+    snowflake_nodiscard auto
+    operator>(const SparseIterator& other) const noexcept -> bool {
+      return pos_ < other.pos_;
+    }
+
+    /**
+     * Less than or equal to comparison operator.
+     * \param other The other iterator to compare to.
+     * \return __true__ if this iterator is less than or equaly to the \p other.
+     */
+    snowflake_nodiscard auto
+    operator<=(const SparseIterator& other) const noexcept -> bool {
+      return !(*this > other);
+    }
+
+    /**
+     * Greater than or equal to comparison operator.
+     * \param other The other iterator to compare to.
+     * \return __true__ if this iterator is less than or equaly to the \p other.
+     */
+    snowflake_nodiscard auto
+    operator>=(const SparseIterator& other) const noexcept -> bool {
+      return !(*this < other);
+    }
+
+    // clang-format off
+    /**
+     * Overload of arrow operator to access a pointer to the iterated object.
+     * \return A pointer to the iterated type.
+     */
+    snowflake_nodiscard auto operator->() const -> pointer {
+      assert(dense_ != nullptr && "Invalid iterator access!");
+      const auto pos = SizeType(pos_ - SizeType{1});
+      return &(*dense_)[pos];
+    }
+    // clang-format on
+
+    /**
+     * Overload of derference operator to get a reference to the iterated
+     * object.
+     * \return A reference to the iterated type.
+     */
+    snowflake_nodiscard auto operator*() const -> reference {
+      assert(dense_ != nullptr && "Invalid iterator access!");
+      const auto pos = SizeType(pos_ - SizeType{1});
+      return (*dense_)[pos];
+    }
+
+   private:
+    const Dense*    dense_ = nullptr; //!< Pointer to the data.
+    difference_type pos_   = 0;       //!< Current index into the dense data.
+  };
+
+ public:
+  // clang-format off
+  /** The size type used for the sparse set. */
   using SizeType = size_t;
+  /** The iterator type used for the sparse set. */
+  using Iterator = SparseIterator;
+  // clang-format on
 
   /** Defines the size of the pages in the sparse array. */
-  static constexpr size_t page_size = sparse_page_size;
+  static constexpr SizeType page_size = sparse_page_size;
 
   /*==--- [construction] ---------------------------------------------------==*/
 
@@ -84,6 +359,10 @@ class SparseSet {
    */
   ~SparseSet() noexcept {
     for (auto& page : sparse_) {
+      if (page == nullptr) {
+        continue;
+      }
+
       allocator_ != nullptr ? allocator_->recycle(page) : std::free(page);
     }
   }
@@ -241,10 +520,44 @@ class SparseSet {
     std::swap(sparse_a, sparse_b);
   }
 
+  /*==--- [iteration] ------------------------------------------------------==*/
+
+  /**
+   * Returns an iterator to the beginning of the set for iteration.
+   *
+   * The returned iterator points to the *most recently inserted* entity in the
+   * sparse set, and iterates from *most* recent to *least* recently inserted.
+   *
+   * This iterator *is not* invalidated by insertion, but may be invalidated by
+   * deletion from the sparse set.
+   *
+   * \return An iterator to the most recent entity in the sparse set.
+   */
+  snowflake_nodiscard auto begin() const noexcept -> Iterator {
+    using size_type = typename Iterator::difference_type;
+    return Iterator{dense_, static_cast<size_type>(dense_.size())};
+  }
+
+  /**
+   * Returns an iterator to the end of the set for iteration.
+   *
+   * The returned iterator points to the *least recently inserted* entity in the
+   * sparse set, and iterates from *most* recent to *least* recently inserted.
+   *
+   * This iterator *is not* invalidated by insertion, but may be invalidated by
+   * deletion from the sparse set.
+   *
+   * \return An iterator to the most recent entity in the sparse set.
+   */
+  snowflake_nodiscard auto end() const noexcept -> Iterator {
+    using size_type = typename Iterator::difference_type;
+    return Iterator{dense_, size_type{0}};
+  }
+
  private:
-  std::vector<Page>   sparse_    = {};      //!< Sparse array.
-  std::vector<Entity> dense_     = {};      //!< Dense array,
-  Allocator*          allocator_ = nullptr; //!< Pointer to allocator.
+  Sparse     sparse_    = {};      //!< Sparse array.
+  Dense      dense_     = {};      //!< Dense array,
+  Allocator* allocator_ = nullptr; //!< Pointer to allocator.
 
   /**
    * Gets the page index for the entity.

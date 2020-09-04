@@ -120,4 +120,92 @@ TEST(sparse_set, swap) {
   set.emplace(e2);
 }
 
+TEST(sparse_set, iterator_construction) {
+  using Iterator = typename SparseSet::Iterator;
+  SparseSet         set;
+  snowflake::Entity e{entity_id};
+  set.emplace(e);
+
+  // Check both copy construction and assignment:
+  Iterator end{set.begin()};
+  Iterator begin{};
+  begin = set.end();
+
+  std::swap(begin, end);
+  EXPECT_EQ(begin, set.begin());
+  EXPECT_EQ(end, set.end());
+  EXPECT_NE(begin, end);
+}
+
+TEST(sparse_set, iterator_iteration) {
+  using Iterator = typename SparseSet::Iterator;
+  SparseSet         set;
+  snowflake::Entity e{entity_id};
+  set.emplace(e);
+
+  // Check both copy construction and assignment:
+  Iterator begin{set.begin()};
+  Iterator end{set.end()};
+
+  EXPECT_EQ(*begin, e);
+  EXPECT_EQ(*(begin.operator->()), e);
+
+  EXPECT_EQ(begin++, set.begin());
+  EXPECT_EQ(end--, set.end());
+
+  // Iterators are swapped, swap back:
+  std::swap(begin, end);
+  EXPECT_EQ(++begin, set.end());
+  EXPECT_EQ(--end, set.begin());
+
+  --begin;
+  ++end;
+
+  EXPECT_EQ(begin + 1, end);
+  EXPECT_EQ(end - 1, begin);
+
+  EXPECT_EQ(begin += 1, end);
+  EXPECT_EQ(begin -= 1, set.begin());
+
+  EXPECT_EQ(begin + (end - begin), set.end());
+  EXPECT_EQ(begin - (begin - end), set.end());
+  EXPECT_EQ(end - (end - begin), set.begin());
+  EXPECT_EQ(end + (begin - end), set.begin());
+
+  EXPECT_EQ(begin[0], *begin);
+
+  EXPECT_LT(begin, end);
+  EXPECT_GT(end, begin);
+
+  EXPECT_LE(begin, set.begin());
+  EXPECT_GE(begin, set.begin());
+  EXPECT_LE(end, set.end());
+  EXPECT_GE(end, set.end());
+
+  const IdType entities = 10;
+  IdType       sum      = entity_id;
+  for (IdType id = 1; id < IdType{entities}; ++id) {
+    set.emplace(snowflake::Entity{id});
+    sum += id;
+  }
+
+  IdType it_sum = 0;
+  for (const auto& e : set) {
+    it_sum += e;
+  }
+  EXPECT_EQ(it_sum, sum);
+
+  // Check that insertion doesn't break the iterator:
+  it_sum = 0;
+  snowflake::Entity ent{entity_id + 2};
+
+  for (const auto& e : set) {
+    set.emplace(ent);
+    it_sum += e;
+    ent++;
+  }
+  EXPECT_EQ(it_sum, sum);
+  EXPECT_EQ(set.size(), entities * 2);
+}
+
 #endif // SNOWFLAKE_TESTS_ECS_SPARSE_SET_HPP
