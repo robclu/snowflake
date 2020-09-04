@@ -334,9 +334,11 @@ class SparseSet {
  public:
   // clang-format off
   /** The size type used for the sparse set. */
-  using SizeType = size_t;
+  using SizeType        = size_t;
   /** The iterator type used for the sparse set. */
-  using Iterator = SparseIterator;
+  using Iterator        = SparseIterator;
+  /** The reverse iterator type for the sparse set. */
+  using ReverseIterator = const Entity*;
   // clang-format on
 
   /** Defines the size of the pages in the sparse array. */
@@ -552,6 +554,34 @@ class SparseSet {
   snowflake_nodiscard auto end() const noexcept -> Iterator {
     using size_type = typename Iterator::difference_type;
     return Iterator{dense_, size_type{0}};
+  }
+
+  /**
+   * Returns a reverse iterator to the beginning of the set for iteration.
+   *
+   * The returned iterator points to the *least recently inserted* entity in the
+   * sparse set, and iterates from *lest* recent to *most* recently inserted.
+   *
+   * This iterator *is* invalidated by insertion and deletion.
+   *
+   * \return An iterator to the least recent entity in the sparse set.
+   */
+  snowflake_nodiscard auto rbegin() const noexcept -> ReverseIterator {
+    return dense_.data();
+  }
+
+  /**
+   * Returns a reverse iterator to the end of the set for iteration.
+   *
+   * The returned iterator points to the *most recently inserted* entity in the
+   * sparse set, and iterates from *least* recent to *most* recently inserted.
+   *
+   * This iterator *is* invalidated by insertion and deletion.
+   *
+   * \return An iterator to the least recent entity in the sparse set.
+   */
+  snowflake_nodiscard auto rend() const noexcept -> ReverseIterator {
+    return rbegin() + dense_.size();
   }
 
  private:

@@ -150,6 +150,7 @@ TEST(sparse_set, iterator_iteration) {
   EXPECT_EQ(*begin, e);
   EXPECT_EQ(*(begin.operator->()), e);
 
+  // Postfix:
   EXPECT_EQ(begin++, set.begin());
   EXPECT_EQ(end--, set.end());
 
@@ -206,6 +207,82 @@ TEST(sparse_set, iterator_iteration) {
   }
   EXPECT_EQ(it_sum, sum);
   EXPECT_EQ(set.size(), entities * 2);
+}
+
+TEST(sparse_set, reverse_iterator_construction) {
+  using Iterator = typename SparseSet::ReverseIterator;
+  SparseSet         set;
+  snowflake::Entity e{entity_id};
+  set.emplace(e);
+
+  // Check both copy construction and assignment:
+  Iterator end{set.rbegin()};
+  Iterator begin{};
+  begin = set.rend();
+
+  std::swap(begin, end);
+  EXPECT_EQ(begin, set.rbegin());
+  EXPECT_EQ(end, set.rend());
+  EXPECT_NE(begin, end);
+}
+
+TEST(sparse_set, reverse_iterator_iteration) {
+  using Iterator = typename SparseSet::ReverseIterator;
+  SparseSet         set;
+  snowflake::Entity e{entity_id};
+  set.emplace(e);
+
+  // Check both copy construction and assignment:
+  Iterator begin{set.rbegin()};
+  Iterator end{set.rend()};
+
+  EXPECT_EQ(*begin, e);
+
+  // post fix
+  EXPECT_EQ(begin++, set.rbegin());
+  EXPECT_EQ(end--, set.rend());
+
+  // Iterators are swapped, swap back, then prefix:
+  std::swap(begin, end);
+  EXPECT_EQ(++begin, set.rend());
+  EXPECT_EQ(--end, set.rbegin());
+
+  --begin;
+  ++end;
+
+  EXPECT_EQ(begin + 1, end);
+  EXPECT_EQ(end - 1, begin);
+
+  EXPECT_EQ(begin += 1, end);
+  EXPECT_EQ(begin -= 1, set.rbegin());
+
+  EXPECT_EQ(begin + (end - begin), set.rend());
+  EXPECT_EQ(begin - (begin - end), set.rend());
+  EXPECT_EQ(end - (end - begin), set.rbegin());
+  EXPECT_EQ(end + (begin - end), set.rbegin());
+
+  EXPECT_EQ(begin[0], *begin);
+
+  EXPECT_LT(begin, end);
+  EXPECT_GT(end, begin);
+
+  EXPECT_LE(begin, set.rbegin());
+  EXPECT_GE(begin, set.rbegin());
+  EXPECT_LE(end, set.rend());
+  EXPECT_GE(end, set.rend());
+
+  const IdType entities = 10;
+  IdType       sum      = entity_id;
+  for (IdType id = 1; id < IdType{entities}; ++id) {
+    set.emplace(snowflake::Entity{id});
+    sum += id;
+  }
+
+  IdType it_sum = 0;
+  for (Iterator it = set.rbegin(); it != set.rend(); ++it) {
+    it_sum += *it;
+  }
+  EXPECT_EQ(it_sum, sum);
 }
 
 #endif // SNOWFLAKE_TESTS_ECS_SPARSE_SET_HPP
