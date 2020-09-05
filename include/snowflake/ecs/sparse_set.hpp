@@ -266,10 +266,10 @@ class SparseSet {
   /*==--- [iteration] ------------------------------------------------------==*/
 
   /**
-   * Returns an iterator to the beginning of the set for iteration.
+   * Returns an iterator to the beginning of the set.
    *
    * The returned iterator points to the *most recently inserted* entity in the
-   * sparse set, and iterates from *most* recent to *least* recently inserted.
+   * sparse set and iterates from *most* recent to *least* recently inserted.
    *
    * This iterator *is not* invalidated by insertion, but may be invalidated by
    * deletion from the sparse set.
@@ -282,10 +282,10 @@ class SparseSet {
   }
 
   /**
-   * Returns an iterator to the end of the set for iteration.
+   * Returns an iterator to the end of the set.
    *
    * The returned iterator points to the *least recently inserted* entity in the
-   * sparse set, and iterates from *most* recent to *least* recently inserted.
+   * sparse set and iterates from *most* recent to *least* recently inserted.
    *
    * This iterator *is not* invalidated by insertion, but may be invalidated by
    * deletion from the sparse set.
@@ -298,10 +298,10 @@ class SparseSet {
   }
 
   /**
-   * Returns a reverse iterator to the beginning of the set for iteration.
+   * Returns a reverse iterator to the beginning of the set.
    *
    * The returned iterator points to the *least recently inserted* entity in the
-   * sparse set, and iterates from *lest* recent to *most* recently inserted.
+   * sparse set and iterates from *lest* recent to *most* recently inserted.
    *
    * This iterator *is* invalidated by insertion and deletion.
    *
@@ -312,10 +312,10 @@ class SparseSet {
   }
 
   /**
-   * Returns a reverse iterator to the end of the set for iteration.
+   * Returns a reverse iterator to the end of the set.
    *
    * The returned iterator points to the *most recently inserted* entity in the
-   * sparse set, and iterates from *least* recent to *most* recently inserted.
+   * sparse set and iterates from *least* recent to *most* recently inserted.
    *
    * This iterator *is* invalidated by insertion and deletion.
    *

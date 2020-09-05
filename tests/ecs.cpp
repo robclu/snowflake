@@ -14,6 +14,7 @@
 //==------------------------------------------------------------------------==//
 
 #include "ecs/entity.hpp"
+#include "ecs/component_storage.hpp"
 #include "ecs/reverse_iterator.hpp"
 #include "ecs/sparse_set.hpp"
 
