@@ -35,17 +35,13 @@ namespace snowflake {
  * \tparam Entity The type of the entity.
  * \tparam Component The type of the component.
  * \tparam EntityAllocator The type of the entity allocator.
- * \tparam ComponentAllocator The type of the component allocator.
  */
 template <
   typename Entity,
   typename Component,
-  typename EntityAllocator    = wrench::ObjectPoolAllocator<Entity>,
-  typename ComponentAllocator = wrench::ObjectPoolAllocator<Component>>
+  typename EntityAllocator = wrench::ObjectPoolAllocator<Entity>>
 class ComponentStorage : public SparseSet<Entity, EntityAllocator> {
   // clang-format off
-  /** Allocator type for the storage. */
-  using Allocator  = ComponentAllocator;
   /** Storage type for the entities */
   using Entities   = SparseSet<Entity, EntityAllocator>;
   /** Defines the type for the components. */
@@ -68,6 +64,18 @@ class ComponentStorage : public SparseSet<Entity, EntityAllocator> {
 
   /** The page size for the storage. */
   static constexpr size_t page_size = Entities::page_size;
+
+  /**
+   * Default constructor for storage -- this does not use an allocator for
+   * entities.
+   */
+  ComponentStorage() noexcept = default;
+
+  /**
+   * Constructor which sets the allocator for the entities.
+   * \param allocator The allocator for the entities.
+   */
+  ComponentStorage(EntityAllocator* allocator) noexcept : Entities{allocator} {}
 
   /**
    * Reserves enough space to emplace \p size compoennts.
@@ -316,8 +324,7 @@ class ComponentStorage : public SparseSet<Entity, EntityAllocator> {
   }
 
  private:
-  Components components_ = {};      //!< Container of components.
-  Allocator* allocator_  = nullptr; //!< Pointer to allocator.
+  Components components_ = {}; //!< Container of components.
 };
 
 } // namespace snowflake
