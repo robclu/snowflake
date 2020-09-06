@@ -118,6 +118,14 @@ TEST(sparse_set, swap) {
 
   set.emplace(e1);
   set.emplace(e2);
+
+  auto i1 = set.index(e1);
+  auto i2 = set.index(e2);
+
+  set.swap(e1, e2);
+
+  EXPECT_EQ(i1, set.index(e2));
+  EXPECT_EQ(i2, set.index(e1));
 }
 
 TEST(sparse_set, iterator_construction) {

@@ -170,7 +170,7 @@ class ComponentStorage : public SparseSet<Entity, EntityAllocator> {
    *
    * \return An iterator to the most recent component.
    */
-  snowflake_nodiscard auto begin() const noexcept -> Iterator {
+  snowflake_nodiscard auto begin() noexcept -> Iterator {
     using size_type = typename Iterator::difference_type;
     return Iterator{components_, static_cast<size_type>(components_.size())};
   }
@@ -186,7 +186,7 @@ class ComponentStorage : public SparseSet<Entity, EntityAllocator> {
    *
    * \return An iterator to the most recent component.
    */
-  snowflake_nodiscard auto end() const noexcept -> Iterator {
+  snowflake_nodiscard auto end() noexcept -> Iterator {
     using size_type = typename Iterator::difference_type;
     return Iterator{components_, size_type{0}};
   }
@@ -281,6 +281,39 @@ class ComponentStorage : public SparseSet<Entity, EntityAllocator> {
   }
 
   /*==--- [algorithms] -----------------------------------------------------==*/
+
+  /**
+   * Finds a component, if it exists.
+   *
+   * If the component doesn't exist, this returns an iterator to the end of the
+   * set, otherwise it returns an iterator to the found component.
+   *
+   * \param entity The entity to find.
+   * \return A valid iterator if found, otherwise an iterator to the end of the
+   *         storage.
+   */
+  snowflake_nodiscard auto find(const Entity& entity) noexcept -> Iterator {
+    return Entities::exists(entity)
+             ? --Iterator(end() - Entities::index(entity))
+             : end();
+  }
+
+  /**
+   * Finds a component, if it exists.
+   *
+   * If the component doesn't exist, this returns an iterator to the end of the
+   * set, otherwise it returns an iterator to the found component.
+   *
+   * \param entity The entity to find.
+   * \return A valid iterator if found, otherwise an iterator to the end of the
+   *         storage.
+   */
+  snowflake_nodiscard auto
+  find(const Entity& entity) const noexcept -> ConstIterator {
+    return Entities::exists(entity)
+             ? --ConstIterator(end() - Entities::index(entity))
+             : end();
+  }
 
  private:
   Components components_ = {};      //!< Container of components.

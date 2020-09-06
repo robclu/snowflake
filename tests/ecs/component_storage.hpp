@@ -171,4 +171,96 @@ TEST(component_storage, move_constructible_non_aggregate) {
   EXPECT_EQ(c.b, float{1.0});
 }
 
+TEST(component_storage, swap_aggregate) {
+  AggStorage        aggs;
+  snowflake::Entity e1{2}, e2{4};
+
+  aggs.emplace(e1, int{10}, float{1});
+  aggs.emplace(e2, int{11}, float{2});
+
+  auto i1 = aggs.index(e1);
+  auto i2 = aggs.index(e2);
+
+  aggs.swap(e1, e2);
+
+  EXPECT_EQ(i1, aggs.index(e2));
+  EXPECT_EQ(i2, aggs.index(e1));
+}
+
+TEST(component_storage, swap_non_aggregate) {
+  NonAggStorage     non_aggs;
+  snowflake::Entity e1{2}, e2{4};
+
+  non_aggs.emplace(e1, int{10}, float{1});
+  non_aggs.emplace(e2, int{11}, float{2});
+
+  auto i1 = non_aggs.index(e1);
+  auto i2 = non_aggs.index(e2);
+
+  non_aggs.swap(e1, e2);
+
+  EXPECT_EQ(i1, non_aggs.index(e2));
+  EXPECT_EQ(i2, non_aggs.index(e1));
+}
+
+TEST(component_storage, find_agregagte) {
+  AggStorage        aggs;
+  snowflake::Entity ent(comp_id);
+
+  EXPECT_EQ(aggs.find(ent), aggs.end());
+
+  Agg a{9, 0.5f};
+  aggs.emplace(ent, a);
+  EXPECT_NE(aggs.find(ent), aggs.end());
+
+  Agg               a1{10, 1.0f}, a2{11, 2.0f}, a3{12, 3.0f};
+  snowflake::Entity e1{1}, e2{2}, e3{3};
+  aggs.emplace(e1, a1);
+  aggs.emplace(e2, a2);
+  aggs.emplace(e3, a3);
+
+  auto it = aggs.find(e3);
+  EXPECT_EQ(it->a, a3.a);
+  EXPECT_EQ(it->b, a3.b);
+  ++it;
+  EXPECT_EQ(it->a, a2.a);
+  EXPECT_EQ(it->b, a2.b);
+  ++it;
+  EXPECT_EQ(it->a, a1.a);
+  EXPECT_EQ(it->b, a1.b);
+  ++it;
+  EXPECT_EQ(it->a, a.a);
+  EXPECT_EQ(it->b, a.b);
+}
+
+TEST(component_storage, find_non_agregagte) {
+  NonAggStorage     non_aggs;
+  snowflake::Entity ent(comp_id);
+
+  EXPECT_EQ(non_aggs.find(ent), non_aggs.end());
+
+  NonAgg a{9, 0.5f};
+  non_aggs.emplace(ent, a);
+  EXPECT_NE(non_aggs.find(ent), non_aggs.end());
+
+  NonAgg            a1{10, 1.0f}, a2{11, 2.0f}, a3{12, 3.0f};
+  snowflake::Entity e1{1}, e2{2}, e3{3};
+  non_aggs.emplace(e1, a1);
+  non_aggs.emplace(e2, a2);
+  non_aggs.emplace(e3, a3);
+
+  auto it = non_aggs.find(e3);
+  EXPECT_EQ(it->a, a3.a);
+  EXPECT_EQ(it->b, a3.b);
+  ++it;
+  EXPECT_EQ(it->a, a2.a);
+  EXPECT_EQ(it->b, a2.b);
+  ++it;
+  EXPECT_EQ(it->a, a1.a);
+  EXPECT_EQ(it->b, a1.b);
+  ++it;
+  EXPECT_EQ(it->a, a.a);
+  EXPECT_EQ(it->b, a.b);
+}
+
 #endif // SNOWFLAKE_TESTS_ECS_COMPONENT_STORAGE_HPP
