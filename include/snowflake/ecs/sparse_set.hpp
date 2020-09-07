@@ -92,13 +92,16 @@ class SparseSet {
 
   /**
    * Constructor to set the allocator for the set.
+   * \param allocator The allocator for the sparse set.
    */
   SparseSet(Allocator* allocator) noexcept : allocator_{allocator_} {}
 
   /**
-   * Destructor which cleans up the sparse pages.
+   * Destructor which cleans up the sparse pages. Here this is virtual so that
+   * it's possible to store the sparse set as a base pointer in the entity
+   * manager.
    */
-  ~SparseSet() noexcept {
+  virtual ~SparseSet() noexcept {
     for (auto& page : sparse_) {
       if (page == nullptr) {
         continue;
