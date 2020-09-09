@@ -8,7 +8,7 @@
 //
 //==------------------------------------------------------------------------==//
 //
-/// \file  sparse_set.hpp
+/// \file  component_storage.hpp
 /// \brief This file implements tests for the sparse set container.
 //
 //==------------------------------------------------------------------------==//
