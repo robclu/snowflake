@@ -103,7 +103,7 @@ struct ComponentIdTraits {
  * \tparam Value The value of the id.
  */
 template <uint16_t IdValue>
-struct ComponentIdTraits<ComponentIdStatic<IdValue>*> {
+struct ComponentIdTraits<ComponentIdStatic<IdValue>> {
   // clang-format off
   /** Type is a static component id. */
   static constexpr bool     is_static = true;
@@ -112,12 +112,48 @@ struct ComponentIdTraits<ComponentIdStatic<IdValue>*> {
   // clang-format on
 };
 
+namespace detail {
+
+/**
+ * Helper struct to get the component id traits for a generic type T. This
+ * prevents types which inherit from ComponentIsStatic to avoid havinf to
+ * implement the traits type themselves.
+ *
+ * \tparam Derived The type of the derived type to get the component id traits
+ *         for.
+ */
+template <typename Derived>
+struct GetComponentIdTraits {
+ private:
+  /** The decayed type of the derived class. */
+  using U = std::decay_t<Derived>;
+
+  /**
+   * Overload for types which are static component id's.
+   * \tparam V The value of the id.
+   */
+  template <auto V>
+  static auto
+  test(ComponentIdStatic<V>*) -> ComponentIdTraits<ComponentIdStatic<V>>;
+
+  /**
+   * Overload for types which are not static component id's.
+   */
+  static auto test(...) -> ComponentIdTraits<U>;
+
+ public:
+  /** Defines the type for the traits. */
+  using type = decltype(test(std::declval<U*>()));
+};
+
+} // namespace detail
+
 /**
  * Returns the component traits for a decayed type T.
  * \tparam T The type to get the component traits for.
  */
 template <typename T>
-using component_id_traits_t = ComponentIdTraits<std::decay_t<T>>;
+using component_id_traits_t = typename detail::GetComponentIdTraits<T>::type;
 
 /**
  * Returns the id of the component, if the component is static, or a null id if

@@ -21,20 +21,6 @@
 
 struct IdTest : public snowflake::ComponentIdStatic<0> {};
 
-namespace snowflake {
-
-template <>
-struct ComponentIdTraits<IdTest> {
-  // clang-format off
-  /** Type is a static component id. */
-  static constexpr bool     is_static = true;
-  /** The value of the component id. */
-  static constexpr uint16_t value     = 0;
-  // clang-format on
-};
-
-} // namespace snowflake
-
 TEST(component_id_static, can_get_value) {
   EXPECT_EQ(snowflake::component_id_v<IdTest>, 0);
 }
