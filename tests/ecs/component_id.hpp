@@ -25,4 +25,8 @@ TEST(component_id_static, can_get_value) {
   EXPECT_EQ(snowflake::component_id_v<IdTest>, 0);
 }
 
+TEST(component_id_static, minimal_size) {
+  EXPECT_EQ(sizeof(IdTest), size_t{1});
+}
+
 #endif // SNOWFLAKE_TESTS_ECS_COMPONENT_ID_HPP
