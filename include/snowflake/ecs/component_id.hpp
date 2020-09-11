@@ -47,6 +47,8 @@ struct ComponentIdDynamic {
 
   /** Null id value for components. */
   static constexpr Type null_id = std::numeric_limits<Type>::max();
+  /** Defines the first id for components. */
+  static constexpr Type start_id = 0;
 
   Type value = null_id; //!< Value of the component id.
 
@@ -54,9 +56,9 @@ struct ComponentIdDynamic {
    * Gets the next valid id, at *runtime*.
    * \return The next valid *runtime* id for a component.
    */
-  snowflake_nodiscard static auto next() noexcept -> Type {
-    static Type current{0};
-    return current++;
+  snowflake_nodiscard static auto next() noexcept -> ComponentIdDynamic {
+    static Type current{start_id};
+    return {current++};
   }
 
   /**
@@ -162,6 +164,31 @@ using component_id_traits_t = typename detail::GetComponentIdTraits<T>::type;
  */
 template <typename T>
 static constexpr auto component_id_v = component_id_traits_t<T>::value;
+
+/**
+ * True if the type T has a constexpr component id value, false otherwise.
+ * \tparam T The type to check if has a constexpr compononent id value.
+ */
+template <typename T>
+static constexpr auto constexpr_component_id_v =
+  component_id_traits_t<T>::is_static;
+
+/**
+ * Defines a valid type (int) if the type T has a constexpr component id value.
+ * \tparam T The type to base the enable on.
+ */
+template <typename T>
+using constexpr_component_enable_t =
+  std::enable_if_t<constexpr_component_id_v<T>, int>;
+
+/**
+ * Defines a valid type (int) if the type T does not have a constexpr component
+ * id value.
+ * \tparam T The type to base the enable on.
+ */
+template <typename T>
+using nonconstexpr_component_enable_t =
+  std::enable_if_t<!constexpr_component_id_v<T>, int>;
 
 } // namespace snowflake
 

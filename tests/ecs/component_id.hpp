@@ -29,4 +29,35 @@ TEST(component_id_static, minimal_size) {
   EXPECT_EQ(sizeof(IdTest), size_t{1});
 }
 
+TEST(component_id_static, constexpr_id_trait) {
+  const bool b = snowflake::constexpr_component_id_v<IdTest>;
+  EXPECT_TRUE(b);
+}
+
+TEST(component_id_dynamic, can_get_value_with_next) {
+  using type = typename snowflake::ComponentIdDynamic::Type;
+
+  auto a = snowflake::ComponentIdDynamic::next();
+  auto b = snowflake::ComponentIdDynamic::next();
+
+  EXPECT_EQ(a.value, snowflake::ComponentIdDynamic::start_id);
+  EXPECT_EQ(b.value, snowflake::ComponentIdDynamic::start_id + 1);
+}
+
+TEST(component_id_dynamic, evaluales_to_bool) {
+  using namespace snowflake;
+
+  auto a = ComponentIdDynamic::next();
+  auto b = ComponentIdDynamic{};
+
+  EXPECT_TRUE(a);
+  EXPECT_FALSE(static_cast<bool>(b));
+}
+
+TEST(component_id_dynamic, constexpr_id_trait) {
+  const bool b =
+    snowflake::constexpr_component_id_v<snowflake::ComponentIdDynamic>;
+  EXPECT_FALSE(b);
+}
+
 #endif // SNOWFLAKE_TESTS_ECS_COMPONENT_ID_HPP
