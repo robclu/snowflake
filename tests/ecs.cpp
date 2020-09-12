@@ -15,6 +15,7 @@
 
 #include "ecs/component_id.hpp"
 #include "ecs/entity.hpp"
+#include "ecs/entity_manager.hpp"
 #include "ecs/component_storage.hpp"
 #include "ecs/reverse_iterator.hpp"
 #include "ecs/sparse_set.hpp"
