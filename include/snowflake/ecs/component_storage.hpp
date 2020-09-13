@@ -101,7 +101,11 @@ class ComponentStorage : public SparseSet<Entity, EntityAllocator> {
     // Many components are aggregates, and emplace back doesn't work with
     // aggregates, so we need to differentiate.
     if constexpr (std::is_aggregate_v<Component>) {
-      components_.push_back(Component{std::forward<Args>(args)...});
+      if constexpr (constexpr_component_id_v<Component>) {
+        components_.push_back(Component{{}, std::forward<Args>(args)...});
+      } else {
+        components_.push_back(Component{std::forward<Args>(args)...});
+      }
     } else {
       components_.emplace_back(std::forward<Args>(args)...);
     }
