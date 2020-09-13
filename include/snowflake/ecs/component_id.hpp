@@ -50,38 +50,13 @@ struct ComponentIdDynamic {
   /** Defines the first id for components. */
   static constexpr Type start_id = 0;
 
-  Type value = null_id; //!< Value of the component id.
-
   /**
    * Gets the next valid id, at *runtime*.
    * \return The next valid *runtime* id for a component.
    */
-  snowflake_nodiscard static auto next() noexcept -> ComponentIdDynamic {
+  snowflake_nodiscard static auto next() noexcept -> Type {
     static Type current{start_id};
-    return {current++};
-  }
-
-  /**
-   * Determines if the id is invalid.
-   * \return __true__ if the id is invalid.
-   */
-  snowflake_nodiscard constexpr auto invalid() const noexcept -> bool {
-    return value == null_id;
-  }
-
-  /**
-   * Overload of operator bool to evaluate the validity of the id.
-   * \return __true__ if the id is valid.
-   */
-  constexpr explicit operator bool() noexcept {
-    return !invalid();
-  }
-
-  /**
-   * Overload of operator to convert to the underlying type.
-   */
-  constexpr operator Type() const noexcept {
-    return value;
+    return current++;
   }
 };
 
@@ -97,6 +72,15 @@ struct ComponentIdTraits {
   /** The value of the component id. */
   static constexpr uint16_t value     = ComponentIdDynamic::null_id;
   // clang-format on
+
+  /**
+   * Dynamic id value.
+   * \return A unique id for the dynamic component.
+   */
+  static auto id() noexcept -> uint16_t {
+    static const uint16_t v = ComponentIdDynamic::next();
+    return v;
+  }
 };
 
 /**
@@ -112,6 +96,14 @@ struct ComponentIdTraits<ComponentIdStatic<IdValue>> {
   /** The value of the component id. */
   static constexpr uint16_t value     = IdValue;
   // clang-format on
+
+  /**
+   * Dynamic id value.
+   * \return A unique id for the dynamic component.
+   */
+  static constexpr auto id() noexcept -> uint16_t {
+    return value;
+  }
 };
 
 namespace detail {
@@ -164,6 +156,16 @@ using component_id_traits_t = typename detail::GetComponentIdTraits<T>::type;
  */
 template <typename T>
 static constexpr auto component_id_v = component_id_traits_t<T>::value;
+
+/**
+ * Returns the id of the component, at runtime. This overload can be used for
+ * for both static and dynamic component ids.
+ * \tparam T The component to get the id for.
+ */
+template <typename T>
+static auto component_id() -> uint16_t {
+  return component_id_traits_t<T>::id();
+}
 
 /**
  * True if the type T has a constexpr component id value, false otherwise.

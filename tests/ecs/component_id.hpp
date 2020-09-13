@@ -20,44 +20,33 @@
 #include <gtest/gtest.h>
 
 struct IdTest : public snowflake::ComponentIdStatic<0> {};
+struct AnyType {};
+struct OtherType {};
 
-TEST(component_id_static, can_get_value) {
+TEST(component_id, can_get_value_static) {
   EXPECT_EQ(snowflake::component_id_v<IdTest>, 0);
 }
 
-TEST(component_id_static, minimal_size) {
+TEST(component_id, static_is_minimal_size) {
   EXPECT_EQ(sizeof(IdTest), size_t{1});
 }
 
 TEST(component_id_static, constexpr_id_trait) {
-  const bool b = snowflake::constexpr_component_id_v<IdTest>;
-  EXPECT_TRUE(b);
-}
-
-TEST(component_id_dynamic, can_get_value_with_next) {
-  using type = typename snowflake::ComponentIdDynamic::Type;
-
-  auto a = snowflake::ComponentIdDynamic::next();
-  auto b = snowflake::ComponentIdDynamic::next();
-
-  EXPECT_EQ(a.value, snowflake::ComponentIdDynamic::start_id);
-  EXPECT_EQ(b.value, snowflake::ComponentIdDynamic::start_id + 1);
-}
-
-TEST(component_id_dynamic, evaluales_to_bool) {
-  using namespace snowflake;
-
-  auto a = ComponentIdDynamic::next();
-  auto b = ComponentIdDynamic{};
-
+  const bool a = snowflake::constexpr_component_id_v<IdTest>;
+  const bool b = snowflake::constexpr_component_id_v<AnyType>;
   EXPECT_TRUE(a);
-  EXPECT_FALSE(static_cast<bool>(b));
+  EXPECT_FALSE(b);
 }
 
-TEST(component_id_dynamic, constexpr_id_trait) {
-  const bool b =
-    snowflake::constexpr_component_id_v<snowflake::ComponentIdDynamic>;
-  EXPECT_FALSE(b);
+TEST(component_id_static, can_use_general_id_function) {
+  const auto id_a = snowflake::component_id<IdTest>();
+  const auto id_b = snowflake::component_id<AnyType>();
+  const auto id_c = snowflake::component_id<AnyType>();
+  const auto id_d = snowflake::component_id<OtherType>();
+  EXPECT_EQ(id_a, 0);
+  EXPECT_EQ(id_b, snowflake::ComponentIdDynamic::start_id);
+  EXPECT_EQ(id_c, snowflake::ComponentIdDynamic::start_id);
+  EXPECT_EQ(id_d, snowflake::ComponentIdDynamic::start_id + 1);
 }
 
 #endif // SNOWFLAKE_TESTS_ECS_COMPONENT_ID_HPP
