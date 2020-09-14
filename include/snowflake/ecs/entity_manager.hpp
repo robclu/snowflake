@@ -96,9 +96,22 @@ class EntityManager {
   struct ComponentPoolHandle {
     /** Type of the pointer to the pool. */
     using PoolPtr = wrench::UniquePtr<PoolData>;
+    /** Type of the id for the pool. */
+    using IdType = typename ComponentIdDynamic::Type;
 
-    PoolPtr            pool = nullptr; //!< Pointer to the pool.
-    ComponentIdDynamic id{};           //!< Id of the component.
+    /**
+     * Initializes the data for the pool.
+     * \param id_value The value of the id for the pool.
+     */
+    auto initialize(IdType id_value) -> void {
+      if (pool == nullptr) {
+        pool = wrench::make_unique<PoolData>();
+        id   = id_value;
+      }
+    }
+
+    PoolPtr pool = nullptr;                     //!< Pointer to the pool.
+    IdType  id   = ComponentIdDynamic::null_id; //!< Id of the component.
   };
 
   /** Defines the type of the pool for static component ids. */
@@ -143,7 +156,7 @@ class EntityManager {
    */
   template <typename Component, typename... Args>
   auto emplace(const Entity& entity, Args&&... args) -> void {
-    fetch_component<Component>().emplace(
+    ensure_component<Component>().emplace(
       *this, entity, std::forward<Args>(args)...);
   }
 
@@ -155,7 +168,7 @@ class EntityManager {
    */
   template <typename Component>
   snowflake_nodiscard auto get(const Entity& entity) -> Component& {
-    fetch_component<Component>().get(entity);
+    return ensure_component<Component>().get(entity);
   }
 
   /**
@@ -166,7 +179,21 @@ class EntityManager {
    */
   template <typename Component>
   snowflake_nodiscard auto get(const Entity& entity) const -> const Component& {
-    fetch_component<Component>().get(entity);
+    return get_component<Component>().get(entity);
+  }
+
+  /**
+   * Returns the number of components of the Component type.
+   *
+   * \note If the component has not been created, this will assert in debug, and
+   *       cause undefined bahaviour in release.
+   *
+   * \tparam Component The type of the component to get the size of.
+   * \return The number of component of type Component.
+   */
+  template <typename Component>
+  snowflake_nodiscard auto size() const -> size_t {
+    return get_component<Component>().size();
   }
 
   /**
@@ -220,23 +247,19 @@ class EntityManager {
    */
   template <typename Component, constexpr_component_enable_t<Component> = 0>
   snowflake_nodiscard auto
-  fetch_component() const -> const ComponentPool<Component>& {
+  get_component() const -> const ComponentPool<Component>& {
     constexpr auto comp_id = component_id_v<Component>;
-    while (comp_id >= static_id_pools_.size()) {
-      static_id_pools_.emplace_back();
-    }
+    assert(comp_id < static_id_pools_.size() && "Invalid component!");
     auto& pool = static_id_pools_[comp_id];
-    if (pool.pool == nullptr) {
-      pool.pool = wrench::make_unique<PoolData>();
-      pool.id   = comp_id;
-    }
+    assert(pool.pool != nullptr && "Unallocated component pool!");
 
     return *static_cast<const ComponentPool<Component>*>(pool.pool.get());
   }
 
   /**
-   * Fetches the pool for a specific component. If the requested component type
-   * doesn't exist then this will allocate a new pool for the component type.
+   * Fetches the pool for a specific component. If the requested component
+   * type doesn't exist then this will allocate a new pool for the component
+   * type.
    *
    * This overload is enabled for types for which the component id is *not*
    * defined at compile time. It needs to search through the components
@@ -245,18 +268,57 @@ class EntityManager {
    */
   template <typename Component, nonconstexpr_component_enable_t<Component> = 0>
   snowflake_nodiscard auto
-  fetch_component() const -> const ComponentPool<Component>& {
-    auto comp_id = ComponentIdDynamic::next();
+  get_component() const -> const ComponentPool<Component>& {
+    const auto comp_id = component_id<Component>();
+    assert(comp_id < dynamic_id_pools_.size());
+    auto& pool = dynamic_id_pools_[comp_id];
+    assert(pool.pool != nullptr && "Unallocated component pool!");
+
+    return *static_cast<const ComponentPool<Component>*>(pool.pool.get());
+  }
+
+  /**
+   * Fetches the pool for a specific component. If the requested component
+   * type doesn't exist then this will allocate a new pool for the component
+   * type.
+   *
+   * This overload is enabled for component types for which an id is defined
+   * at compile time.
+   *
+   * \tparam Component The type of the component to fetch the pool for.
+   */
+  template <typename Component, constexpr_component_enable_t<Component> = 0>
+  snowflake_nodiscard auto ensure_component() -> ComponentPool<Component>& {
+    constexpr auto comp_id = component_id_v<Component>;
+    while (comp_id >= static_id_pools_.size()) {
+      static_id_pools_.emplace_back();
+    }
+    auto& pool = static_id_pools_[comp_id];
+    pool.initialize(comp_id);
+
+    return *static_cast<ComponentPool<Component>*>(pool.pool.get());
+  }
+
+  /**
+   * Fetches the pool for a specific component. If the requested component
+   * type doesn't exist then this will allocate a new pool for the component
+   * type.
+   *
+   * This overload is enabled for types for which the component id is *not*
+   * defined at compile time. It needs to search through the components
+   *
+   * \tparam Component The type of the component to fetch the pool for.
+   */
+  template <typename Component, nonconstexpr_component_enable_t<Component> = 0>
+  snowflake_nodiscard auto ensure_component() -> ComponentPool<Component>& {
+    const auto comp_id = component_id<Component>();
     while (comp_id >= dynamic_id_pools_.size()) {
       dynamic_id_pools_.emplace_back();
     }
     auto& pool = dynamic_id_pools_[comp_id];
-    if (pool.pool == nullptr) {
-      pool.pool = wrench::make_unique<PoolData>();
-      pool.id   = comp_id;
-    }
+    pool.initialize(comp_id);
 
-    return *static_cast<const ComponentPool<Component>*>(pool.pool.get());
+    return *static_cast<ComponentPool<Component>*>(pool.pool.get());
   }
 };
 

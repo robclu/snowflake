@@ -19,24 +19,20 @@
 #include <snowflake/ecs/entity_manager.hpp>
 #include <gtest/gtest.h>
 
-struct StaticComponent : snowflake::ComponentIdStatic<0> {
+struct StaticComponent : public snowflake::ComponentIdStatic<0> {
   int   a = 0;
-  float b = 0.f;
+  float b = 0.0f;
 };
 
-struct DynamicComponent : snowflake::ComponentIdDynamic {
-  using Base = snowflake::ComponentIdDynamic;
-
-  DynamicComponent() : Base(Base::next()) {}
-
+struct DynamicComponent {
   int   a = 0;
-  float b = 0.f;
+  float b = 0.0f;
 };
 
-using Manager = snowflake::EntityManager<snowflake::Entity>;
+using EntityManager = snowflake::EntityManager<snowflake::Entity>;
 
 TEST(entity_manager, creation_and_recycling) {
-  Manager manager;
+  EntityManager manager;
   EXPECT_EQ(manager.entities_created(), size_t{0});
   EXPECT_EQ(manager.entities_active(), size_t{0});
   EXPECT_EQ(manager.entities_free(), size_t{0});
@@ -54,6 +50,48 @@ TEST(entity_manager, creation_and_recycling) {
   EXPECT_EQ(manager.entities_created(), size_t{3});
   EXPECT_EQ(manager.entities_active(), size_t{2});
   EXPECT_EQ(manager.entities_free(), size_t{1});
+}
+
+TEST(entity_manager, dynamic_components) {
+  EntityManager em;
+
+  auto e1 = em.create();
+  auto e2 = em.create();
+  auto e3 = em.create();
+
+  em.emplace<DynamicComponent>(e1, 4, 3.0f);
+  em.emplace<DynamicComponent>(e2, 5, 6.0f);
+
+  auto& c1 = em.get<DynamicComponent>(e1);
+  auto& c2 = em.get<DynamicComponent>(e2);
+
+  EXPECT_EQ(c1.a, 4);
+  EXPECT_EQ(c1.b, 3.0f);
+  EXPECT_EQ(c2.a, 5);
+  EXPECT_EQ(c2.b, 6.0f);
+
+  EXPECT_EQ(em.size<StaticComponent>(), size_t{2});
+}
+
+TEST(entity_manager, static_components) {
+  EntityManager em;
+
+  auto e1 = em.create();
+  auto e2 = em.create();
+  auto e3 = em.create();
+
+  em.emplace<StaticComponent>(e1, 4, 3.0f);
+  em.emplace<StaticComponent>(e2, 5, 6.0f);
+
+  auto& c1 = em.get<StaticComponent>(e1);
+  auto& c2 = em.get<StaticComponent>(e2);
+
+  EXPECT_EQ(c1.a, 4);
+  EXPECT_EQ(c1.b, 3.0f);
+  EXPECT_EQ(c2.a, 5);
+  EXPECT_EQ(c2.b, 6.0f);
+
+  EXPECT_EQ(em.size<StaticComponent>(), size_t{2});
 }
 
 #endif // SNOWFLAKE_TESTS_ECS_ENTITY_MANAGER_HPP
